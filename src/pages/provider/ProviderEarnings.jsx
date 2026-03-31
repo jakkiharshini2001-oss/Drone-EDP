@@ -1,232 +1,437 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProviderLayout from "../../components/provider/ProviderLayout";
-import { TrendingUp, Calendar, ArrowUpRight, User } from "lucide-react";
+import {
+  TrendingUp,
+  Calendar,
+  ArrowUpRight,
+  User,
+  Wallet,
+  MapPin,
+  RefreshCw
+} from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
+const formatCurrency = (value) =>
+  `₹${Number(value || 0).toLocaleString("en-IN")}`;
+
+const formatDate = (value) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+};
+
+const formatTime = (value) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return d.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
+
+const isSameLocalDay = (dateValue, compareDate = new Date()) => {
+  const d = new Date(dateValue);
+  return (
+    d.getDate() === compareDate.getDate() &&
+    d.getMonth() === compareDate.getMonth() &&
+    d.getFullYear() === compareDate.getFullYear()
+  );
+};
+
+const isSameLocalMonth = (dateValue, compareDate = new Date()) => {
+  const d = new Date(dateValue);
+  return (
+    d.getMonth() === compareDate.getMonth() &&
+    d.getFullYear() === compareDate.getFullYear()
+  );
+};
+
 const ProviderEarnings = () => {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [providerId, setProviderId] = useState(null);
+
   const [todayTotal, setTodayTotal] = useState(0);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [lifetimeTotal, setLifetimeTotal] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
   const [completedBookings, setCompletedBookings] = useState([]);
-  // Background is now handled by ProviderLayout
 
+  const realtimeChannelRef = useRef(null);
+  const authToastShownRef = useRef(false);
 
-  useEffect(() => {
-    loadEarnings();
-  }, []);
+  const monthLabel = useMemo(
+    () =>
+      new Date().toLocaleString("en-IN", {
+        month: "long",
+        year: "numeric"
+      }),
+    []
+  );
 
-  async function loadEarnings() {
-    setLoading(true);
-
-    /* AUTH */
-    const { data: authData, error: authError } =
-      await supabase.auth.getUser();
-
-    if (authError || !authData?.user) {
-      toast.error("Authentication failed");
-      setLoading(false);
-      return;
-    }
-
-    const providerId = authData.user.id;
-
-    /* FETCH COMPLETED BOOKINGS */
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        service_type,
-        scheduled_at,
-        total_price,
-        farmer_name,
-        village,
-        district
-      `)
-      .eq("provider_id", providerId)
-      .eq("status", "completed")
-      .order("scheduled_at", { ascending: false });
-
-    if (error) {
-      console.error("Earnings fetch error:", error);
-      toast.error("Failed to load earnings");
-      setLoading(false);
-      return;
-    }
-
+  const calculateEarnings = useCallback((bookings = []) => {
     const now = new Date();
-    const todayStr = now.toDateString();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
 
-    let todaySum = 0;
-    let monthSum = 0;
-    let lifetimeSum = 0;
+    let today = 0;
+    let month = 0;
+    let lifetime = 0;
 
-    const rows = (data || []).map((b) => {
-      const jobDate = new Date(b.scheduled_at);
-      const amount = Number(b.total_price) || 0;
+    const mapped = bookings.map((item) => {
+      const amount = Number(item.total_price) || 0;
+      lifetime += amount;
 
-      lifetimeSum += amount;
-
-      if (jobDate.toDateString() === todayStr) {
-        todaySum += amount;
+      if (item.scheduled_at && isSameLocalDay(item.scheduled_at, now)) {
+        today += amount;
       }
 
-      if (
-        jobDate.getMonth() === currentMonth &&
-        jobDate.getFullYear() === currentYear
-      ) {
-        monthSum += amount;
+      if (item.scheduled_at && isSameLocalMonth(item.scheduled_at, now)) {
+        month += amount;
       }
 
       return {
-        id: b.id,
-        service: b.service_type,
-        farmer: b.farmer_name || "Farmer",
+        id: item.id,
+        service: item.service_type || "Service",
+        farmer: item.farmer_name || "Farmer",
         amount,
-        location: b.village || b.district || "—",
-        date: jobDate.toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        time: jobDate.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        location: item.address_line || item.district || "—",
+        date: formatDate(item.scheduled_at),
+        time: formatTime(item.scheduled_at)
       };
     });
 
-    setTodayTotal(todaySum);
-    setMonthlyTotal(monthSum);
-    setLifetimeTotal(lifetimeSum);
-    setCompletedCount(rows.length);
-    setCompletedBookings(rows);
-    setLoading(false);
-  }
+    setTodayTotal(today);
+    setMonthlyTotal(month);
+    setLifetimeTotal(lifetime);
+    setCompletedCount(mapped.length);
+    setCompletedBookings(mapped);
+  }, []);
+
+  const fetchEarnings = useCallback(
+    async (showMainLoader = false) => {
+      if (!providerId) return;
+
+      if (showMainLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select(
+            `
+            id,
+            provider_id,
+            status,
+            service_type,
+            scheduled_at,
+            total_price,
+            farmer_name,
+            district,
+            address_line
+          `
+          )
+          .eq("provider_id", providerId)
+          .eq("status", "completed")
+          .order("scheduled_at", { ascending: false });
+
+        if (error) {
+          console.error("Supabase earnings query error:", error);
+          throw error;
+        }
+
+        calculateEarnings(data || []);
+      } catch (error) {
+        console.error("Failed to load provider earnings:", error);
+        toast.error(error?.message || "Failed to load earnings");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [providerId, calculateEarnings]
+  );
+
+  const loadProvider = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const {
+        data: { user },
+        error
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        if (!authToastShownRef.current) {
+          toast.error("Authentication failed");
+          authToastShownRef.current = true;
+        }
+        setLoading(false);
+        return;
+      }
+
+      setProviderId(user.id);
+    } catch (error) {
+      console.error("Auth load error:", error);
+      toast.error("Failed to load provider account");
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProvider();
+  }, [loadProvider]);
+
+  useEffect(() => {
+    if (!providerId) return;
+    fetchEarnings(true);
+  }, [providerId, fetchEarnings]);
+
+  useEffect(() => {
+    if (!providerId) return;
+
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+
+    const channel = supabase
+      .channel(`provider-earnings-${providerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+          filter: `provider_id=eq.${providerId}`
+        },
+        () => {
+          fetchEarnings(false);
+        }
+      )
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [providerId, fetchEarnings]);
 
   return (
     <ProviderLayout>
-      <div className="max-w-7xl mx-auto px-6 pt-10">
-        <h1 className="text-4xl md:text-5xl font-black mb-10 text-white drop-shadow-md uppercase tracking-tighter">
-          Financial Overview
-        </h1>
- 
-        {/* SUMMARY */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
- 
-          {/* TODAY */}
-          <div className="bg-gradient-to-br from-emerald-600/90 to-teal-900/90 border border-white/20 backdrop-blur-md text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-            <div className="absolute inset-0 bg-white/5 pointer-events-none group-hover:bg-white/10 transition-colors"></div>
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
-                Today's Earnings
-              </p>
-              <h2 className="text-5xl md:text-6xl font-black mt-3 drop-shadow-lg">
-                ₹{todayTotal.toLocaleString("en-IN")}
-              </h2>
-              <div className="mt-6 flex items-center gap-2 text-emerald-100/80 text-sm font-bold tracking-widest uppercase">
-                <TrendingUp size={16} className="text-emerald-400" /> {completedCount} Completed Jobs
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300 mb-2">
+              Provider Dashboard
+            </p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+              Earnings Overview
+            </h1>
+            <p className="mt-2 text-sm text-white/70 max-w-2xl">
+              Dynamic provider earnings from completed bookings.
+            </p>
           </div>
- 
-          {/* MONTH */}
-          <div className="bg-gradient-to-br from-emerald-600/80 to-teal-900/80 border border-white/20 backdrop-blur-md text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-            <div className="absolute inset-0 bg-white/5 pointer-events-none group-hover:bg-white/10 transition-colors"></div>
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
-                Monthly Revenue
-              </p>
-              <h2 className="text-4xl md:text-5xl font-black mt-3 drop-shadow-md">
-                ₹{monthlyTotal.toLocaleString("en-IN")}
-              </h2>
-              <div className="mt-6 flex items-center gap-2 text-emerald-100/80 text-sm font-bold tracking-widest uppercase">
-                <Calendar size={16} className="text-emerald-400" />
-                {new Date().toLocaleString("en-IN", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </div>
-            </div>
-          </div>
- 
-          {/* LIFETIME */}
-          <div className="bg-gradient-to-br from-teal-700/80 to-emerald-900/80 border border-white/20 backdrop-blur-md text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-            <div className="absolute inset-0 bg-white/5 pointer-events-none group-hover:bg-white/10 transition-colors"></div>
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
-                Lifetime Earnings
-              </p>
-              <h2 className="text-4xl md:text-5xl font-black mt-3 text-emerald-400 drop-shadow-md">
-                ₹{lifetimeTotal.toLocaleString("en-IN")}
-              </h2>
-              <p className="mt-6 text-emerald-100/80 text-sm font-bold tracking-widest uppercase">
-                Total completed jobs revenue
-              </p>
-            </div>
-          </div>
- 
+
+          <button
+            onClick={() => fetchEarnings(false)}
+            disabled={loading || refreshing || !providerId}
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/15 disabled:opacity-60"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
 
-        {/* COMPLETED SERVICES LIST */}
-        <div className="bg-white/10 backdrop-blur-3xl border border-white/20 p-10 rounded-[2.5rem] shadow-2xl mb-12 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-teal-900/20 pointer-events-none"></div>
-          <div className="relative z-10">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-300 mb-8 pb-4 border-b border-white/10">
-              Completed Services ({completedCount})
-            </h3>
- 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          <div className="rounded-3xl border border-emerald-400/15 bg-gradient-to-br from-emerald-500/20 to-teal-900/30 backdrop-blur-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/20 flex items-center justify-center">
+                <Wallet size={20} className="text-emerald-300" />
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/80">
+                Today
+              </span>
+            </div>
+
             {loading ? (
-              <p className="text-white/70 font-medium tracking-wide">Loading earnings…</p>
-            ) : completedBookings.length === 0 ? (
-              <p className="text-white/70 font-medium tracking-wide">
-                No completed services yet.
-              </p>
+              <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
             ) : (
-              <div className="space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-white">
+                {formatCurrency(todayTotal)}
+              </h2>
+            )}
+
+            <div className="mt-4 flex items-center gap-2 text-sm text-white/70">
+              <TrendingUp size={15} className="text-emerald-300" />
+              <span>{completedCount} completed jobs</span>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-400/15 bg-gradient-to-br from-cyan-500/15 to-slate-900/35 backdrop-blur-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/20 flex items-center justify-center">
+                <Calendar size={20} className="text-cyan-300" />
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+                This Month
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
+            ) : (
+              <h2 className="text-3xl md:text-4xl font-bold text-white">
+                {formatCurrency(monthlyTotal)}
+              </h2>
+            )}
+
+            <div className="mt-4 text-sm text-white/70">{monthLabel}</div>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-400/15 bg-gradient-to-br from-teal-500/15 to-emerald-900/35 backdrop-blur-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-teal-500/20 border border-teal-400/20 flex items-center justify-center">
+                <ArrowUpRight size={20} className="text-teal-300" />
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-200/80">
+                Lifetime
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
+            ) : (
+              <h2 className="text-3xl md:text-4xl font-bold text-white">
+                {formatCurrency(lifetimeTotal)}
+              </h2>
+            )}
+
+            <div className="mt-4 text-sm text-white/70">
+              Total earnings from completed bookings
+            </div>
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/10 backdrop-blur-2xl shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-teal-900/20 pointer-events-none" />
+
+          <div className="relative z-10 p-5 md:p-6">
+            <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div>
+                <h3 className="text-lg md:text-xl font-semibold text-white">
+                  Completed Services
+                </h3>
+                <p className="mt-1 text-sm text-white/60">
+                  Earnings list from completed provider bookings
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-[0.18em] text-emerald-300">
+                  Total Jobs
+                </p>
+                <p className="text-lg font-semibold text-white">{completedCount}</p>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="space-y-4 mt-5">
+                {[1, 2, 3].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-5 animate-pulse"
+                  >
+                    <div className="flex justify-between gap-4">
+                      <div className="space-y-3 flex-1">
+                        <div className="h-4 w-40 rounded bg-white/10" />
+                        <div className="h-3 w-56 rounded bg-white/10" />
+                        <div className="h-3 w-28 rounded bg-white/10" />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-4 w-20 rounded bg-white/10" />
+                        <div className="h-3 w-16 rounded bg-white/10" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : completedBookings.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-white text-base font-medium">
+                  No completed services yet
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Once bookings are marked completed, provider earnings will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 mt-5">
                 {completedBookings.map((job) => (
                   <div
                     key={job.id}
-                    className="flex justify-between items-center p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors group"
+                    className="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors p-5"
                   >
-                    <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center text-emerald-300 shadow-inner group-hover:scale-110 transition-transform">
-                        <ArrowUpRight size={24} />
-                      </div>
- 
-                      <div>
-                        <p className="font-black text-white text-lg tracking-tight mb-1">
-                          {job.service}
-                        </p>
- 
-                        <div className="flex items-center gap-4 text-emerald-100/70 text-sm font-semibold">
-                          <span className="flex items-center gap-1.5">
-                            <User size={14} className="text-emerald-400" />
-                            {job.farmer}
-                          </span>
-                          <span className="text-white/30">•</span>
-                          <span className="text-xs tracking-widest uppercase">
-                            {job.date} • {job.time}
-                          </span>
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/20 flex items-center justify-center shrink-0">
+                          <ArrowUpRight size={20} className="text-emerald-300" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-base md:text-lg font-semibold text-white truncate">
+                            {job.service}
+                          </p>
+
+                          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
+                            <span className="inline-flex items-center gap-1.5">
+                              <User size={14} className="text-emerald-300" />
+                              {job.farmer}
+                            </span>
+                            <span className="hidden sm:inline text-white/30">•</span>
+                            <span>{job.date}</span>
+                            <span className="hidden sm:inline text-white/30">•</span>
+                            <span>{job.time}</span>
+                          </div>
+
+                          <div className="mt-2 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] text-white/50">
+                            <MapPin size={13} />
+                            {job.location}
+                          </div>
                         </div>
                       </div>
-                    </div>
- 
-                    <div className="text-right">
-                      <p className="font-black text-2xl text-emerald-400 drop-shadow-sm mb-1">
-                        +₹{job.amount.toLocaleString("en-IN")}
-                      </p>
-                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
-                        {job.location}
-                      </p>
+
+                      <div className="text-left lg:text-right shrink-0">
+                        <p className="text-xl md:text-2xl font-bold text-emerald-400">
+                          +{formatCurrency(job.amount)}
+                        </p>
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/45">
+                          completed earning
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {refreshing && !loading ? (
+              <div className="mt-4 text-xs text-white/55">Updating latest earnings…</div>
+            ) : null}
           </div>
         </div>
       </div>

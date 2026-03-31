@@ -13,6 +13,7 @@ import {
   Navigation,
   CheckCircle2,
   Clock3,
+  Radio,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { supabase } from "../../lib/supabase";
@@ -203,6 +204,10 @@ export default function ProviderDashboard() {
         distance_km: distanceKm,
         is_admin_booking: isAdminBooking,
         is_direct_assigned_booking: isDirectAssignedBooking,
+        is_dispatch_notified:
+          !isAssignedToMe &&
+          (booking.status === "requested" || booking.status === "reassigning") &&
+          notified.map(String).includes(String(user.id)),
       });
     }
 
@@ -396,7 +401,9 @@ export default function ProviderDashboard() {
         });
 
         const newBusyDate = new Date(booking.scheduled_at).toLocaleDateString("en-CA");
-        setBusyDates((prev) => (prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]));
+        setBusyDates((prev) =>
+          prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]
+        );
 
         toast.success("Request Accepted");
         loadDashboard();
@@ -441,7 +448,9 @@ export default function ProviderDashboard() {
       });
 
       const newBusyDate = new Date(booking.scheduled_at).toLocaleDateString("en-CA");
-      setBusyDates((prev) => (prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]));
+      setBusyDates((prev) =>
+        prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]
+      );
 
       toast.success("Request Accepted");
       loadDashboard();
@@ -756,7 +765,9 @@ export default function ProviderDashboard() {
       }
 
       setBusyDates((prev) => {
-        const cancelledDate = new Date(cancelModal.scheduled_at).toLocaleDateString("en-CA");
+        const cancelledDate = new Date(cancelModal.scheduled_at).toLocaleDateString(
+          "en-CA"
+        );
         return prev.filter((d) => d !== cancelledDate);
       });
 
@@ -802,10 +813,30 @@ export default function ProviderDashboard() {
   });
 
   const filterButtons = [
-    { key: "requested", label: "Requested", icon: Clock3, count: counts.requested },
-    { key: "accepted", label: "Accepted", icon: CheckCircle2, count: counts.accepted },
-    { key: "ongoing", label: "Ongoing", icon: Tractor, count: counts.ongoing },
-    { key: "completed", label: "Completed", icon: Star, count: counts.completed },
+    {
+      key: "requested",
+      label: "Requested",
+      icon: Clock3,
+      count: counts.requested,
+    },
+    {
+      key: "accepted",
+      label: "Accepted",
+      icon: CheckCircle2,
+      count: counts.accepted,
+    },
+    {
+      key: "ongoing",
+      label: "Ongoing",
+      icon: Tractor,
+      count: counts.ongoing,
+    },
+    {
+      key: "completed",
+      label: "Completed",
+      icon: Star,
+      count: counts.completed,
+    },
   ];
 
   return (
@@ -961,7 +992,11 @@ export default function ProviderDashboard() {
                           {item.count}
                         </span>
                       </div>
-                      <p className={`text-sm font-bold ${active ? "text-white" : "text-slate-700"}`}>
+                      <p
+                        className={`text-sm font-bold ${
+                          active ? "text-white" : "text-slate-700"
+                        }`}
+                      >
                         {item.label}
                       </p>
                     </button>
@@ -1004,6 +1039,13 @@ export default function ProviderDashboard() {
                               <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
                                 <Leaf size={12} />
                                 Farmer Booking
+                              </span>
+                            )}
+
+                            {r.is_dispatch_notified && (
+                              <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">
+                                <Radio size={12} />
+                                Notified in Dispatch
                               </span>
                             )}
 
@@ -1099,7 +1141,9 @@ export default function ProviderDashboard() {
 
                           {r.agency_name && r.is_admin_booking && (
                             <div className="mt-3 text-sm text-slate-600">
-                              <span className="font-semibold text-slate-800">Agency:</span>{" "}
+                              <span className="font-semibold text-slate-800">
+                                Agency:
+                              </span>{" "}
                               {r.agency_name}
                             </div>
                           )}

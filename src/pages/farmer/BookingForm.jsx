@@ -535,8 +535,8 @@ const AddressModal = ({ onClose, onSelect, farmerId }) => {
                 {capturingGPS
                   ? "Capturing GPS..."
                   : resolvingAddress
-                    ? "Resolving Address..."
-                    : "📡 Capture GPS Location"}
+                  ? "Resolving Address..."
+                  : "📡 Capture GPS Location"}
               </button>
 
               <input
@@ -707,8 +707,6 @@ const LocationSelectionSection = ({
   return (
     <>
       <div className="grid grid-cols-3 gap-3">
-
-        {/* Saved */}
         <button
           type="button"
           onClick={() => setShowAddressModal(true)}
@@ -722,7 +720,6 @@ const LocationSelectionSection = ({
           🏠 Saved
         </button>
 
-        {/* Map */}
         <button
           type="button"
           onClick={handleSelectOnMap}
@@ -736,7 +733,6 @@ const LocationSelectionSection = ({
           📍 Map
         </button>
 
-        {/* GPS */}
         <button
           type="button"
           onClick={captureLocation}
@@ -752,10 +748,9 @@ const LocationSelectionSection = ({
           {capturingLocation
             ? "GPS..."
             : resolvingAddress
-              ? "..."
-              : "📡 GPS"}
+            ? "..."
+            : "📡 GPS"}
         </button>
-
       </div>
 
       {selectedLocation && (
@@ -851,20 +846,23 @@ const BookingForm = ({ bookingData, onBack }) => {
       setFarmerId(user.id);
 
       const { data } = await supabase
+        .from("farms")
+        .select("*");
+
+      const { data: farmerData } = await supabase
         .from("farmers")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      if (data) {
-        setFarmerProfile(data);
-        // setFarmerPhone(data.phone_number || ""); // Removed auto-fill
+      if (farmerData) {
+        setFarmerProfile(farmerData);
 
         setDetails((prev) => ({
           ...prev,
-          district: data.district || prev.district,
-          state: data.state || prev.state,
-          pincode: data.pincode || prev.pincode,
+          district: farmerData.district || prev.district,
+          state: farmerData.state || prev.state,
+          pincode: farmerData.pincode || prev.pincode,
         }));
       }
     };
@@ -1097,8 +1095,8 @@ const BookingForm = ({ bookingData, onBack }) => {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
@@ -1220,7 +1218,7 @@ const BookingForm = ({ bookingData, onBack }) => {
 
             payment_status: "PENDING",
             payment_method: paymentMethod,
-            booking_source: "farmer_app",
+            booking_source: "farmer_web",
           },
         ])
         .select()
@@ -1231,56 +1229,57 @@ const BookingForm = ({ bookingData, onBack }) => {
         setConfirmingBooking(false);
         return;
       }
-      // ✅ AUTO SAVE LOCATION FOR FUTURE BOOKINGS
-try {
-  const lat = selectedLocation.latitude;
-  const lng = selectedLocation.longitude;
 
-  if (lat && lng) {
-    // Check if already exists (avoid duplicates)
-    const { data: existing } = await supabase
-      .from("farmer_addresses")
-      .select("id")
-      .eq("farmer_id", user.id)
-      .eq("latitude", lat)
-      .eq("longitude", lng)
-      .limit(1);
+      try {
+        const lat = selectedLocation.latitude;
+        const lng = selectedLocation.longitude;
 
-    if (!existing || existing.length === 0) {
-      // Check if this is first address (set default)
-      const { data: existingAddresses } = await supabase
-        .from("farmer_addresses")
-        .select("id")
-        .eq("farmer_id", user.id);
+        if (lat && lng) {
+          const { data: existing } = await supabase
+            .from("farmer_addresses")
+            .select("id")
+            .eq("farmer_id", user.id)
+            .eq("latitude", lat)
+            .eq("longitude", lng)
+            .limit(1);
 
-      const isFirst = !existingAddresses || existingAddresses.length === 0;
+          if (!existing || existing.length === 0) {
+            const { data: existingAddresses } = await supabase
+              .from("farmer_addresses")
+              .select("id")
+              .eq("farmer_id", user.id);
 
-      await supabase.from("farmer_addresses").insert([
-        {
-          farmer_id: user.id,
-          label: "Recent Location", // you can improve this later
-          address_name: selectedLocation.address_name,
-          address_line: selectedLocation.address_name,
-          district: selectedLocation.district || "",
-          state: selectedLocation.state || "",
-          pincode: selectedLocation.pincode || "",
-          latitude: lat,
-          longitude: lng,
-          is_default: isFirst,
-        },
-      ]);
-    }
-  }
-} catch (err) {
-  console.error("Auto save address failed:", err);
-}
-  
+            const isFirst = !existingAddresses || existingAddresses.length === 0;
+
+            await supabase.from("farmer_addresses").insert([
+              {
+                farmer_id: user.id,
+                label: "Recent Location",
+                address_name: selectedLocation.address_name,
+                address_line: selectedLocation.address_name,
+                district: selectedLocation.district || "",
+                state: selectedLocation.state || "",
+                pincode: selectedLocation.pincode || "",
+                latitude: lat,
+                longitude: lng,
+                is_default: isFirst,
+              },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Auto save address failed:", err);
+      }
+
+      /* ==========================================================
+         INITIAL PROVIDER DISPATCH
+         FIXED: removed is_online filter
+      ========================================================== */
 
       const { data: allProviders } = await supabase
         .from("providers")
         .select("id, lat, lng")
         .eq("is_active", true)
-        .eq("is_online", true)
         .eq("verification_status", "approved");
 
       if (allProviders && allProviders.length > 0) {
@@ -1301,8 +1300,10 @@ try {
 
         const within10km = allProviders
           .filter((p) => {
-            if (!p.lat || !p.lng) return false;
+            if (p.lat === null || p.lat === undefined) return false;
+            if (p.lng === null || p.lng === undefined) return false;
             if (busyProviderIds.has(p.id)) return false;
+
             const dist = haversineKm(latitude, longitude, p.lat, p.lng);
             return dist <= 10;
           })
@@ -1333,9 +1334,7 @@ try {
     return (
       <div className="pt-24 pb-20 bg-gray-50 min-h-screen flex items-center justify-center px-6">
         <div className="bg-white p-10 rounded-3xl shadow-2xl max-w-xl w-full text-center">
-          <h2 className="text-2xl font-black mb-4">
-            Booking session expired
-          </h2>
+          <h2 className="text-2xl font-black mb-4">Booking session expired</h2>
           <button
             onClick={() => navigate("/services")}
             className="w-full bg-green-500 text-white py-4 rounded-2xl font-black hover:bg-green-600"
@@ -1361,90 +1360,197 @@ try {
         />
       )}
 
-
-
       <div className="pt-36 pb-20 min-h-screen relative overflow-hidden">
-        {/* Transparent Background */}
-
         <div className="max-w-4xl mx-auto px-4 relative z-10">
           <div className="bg-gradient-to-br from-emerald-500/95 via-green-600/90 to-teal-700/95 backdrop-blur-2xl rounded-[3rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] border border-white/30 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-white/10 pointer-events-none"></div>
 
             {showPreviewModal ? (
               <div className="flex flex-col min-h-[600px]">
-                {/* Header for Review View */}
                 <div className="px-10 py-8 border-b border-emerald-100 bg-white/90 sticky top-0 z-20 shadow-sm backdrop-blur-md">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter text-black">Review Your Booking</h2>
-                  <p className="text-black text-sm mt-1 uppercase tracking-widest font-bold opacity-70">Please verify all details before confirming</p>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter text-black">
+                    Review Your Booking
+                  </h2>
+                  <p className="text-black text-sm mt-1 uppercase tracking-widest font-bold opacity-70">
+                    Please verify all details before confirming
+                  </p>
                 </div>
 
                 <div className="p-10 space-y-8">
                   <div className="grid md:grid-cols-2 gap-8">
                     <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
-                      <h3 className="font-black text-xl mb-4 text-black uppercase tracking-tight">Service Details</h3>
+                      <h3 className="font-black text-xl mb-4 text-black uppercase tracking-tight">
+                        Service Details
+                      </h3>
                       <div className="space-y-3 text-sm">
-                        <p><span className="text-black font-medium uppercase text-xs block mb-1">Service</span> <span className="text-lg font-bold text-emerald-900">{bookingData?.title || "—"}</span></p>
-                        <p><span className="text-black font-medium uppercase text-xs block mb-1">Crop</span> <span className="text-lg font-bold text-emerald-900">{selectedCrop?.crop_name || "—"}</span></p>
-                        <p><span className="text-black font-medium uppercase text-xs block mb-1">Land Area</span> <span className="text-lg font-bold text-emerald-900">{details.acres} Acres</span></p>
+                        <p>
+                          <span className="text-black font-medium uppercase text-xs block mb-1">
+                            Service
+                          </span>{" "}
+                          <span className="text-lg font-bold text-emerald-900">
+                            {bookingData?.title || "—"}
+                          </span>
+                        </p>
+                        <p>
+                          <span className="text-black font-medium uppercase text-xs block mb-1">
+                            Crop
+                          </span>{" "}
+                          <span className="text-lg font-bold text-emerald-900">
+                            {selectedCrop?.crop_name || "—"}
+                          </span>
+                        </p>
+                        <p>
+                          <span className="text-black font-medium uppercase text-xs block mb-1">
+                            Land Area
+                          </span>{" "}
+                          <span className="text-lg font-bold text-emerald-900">
+                            {details.acres} Acres
+                          </span>
+                        </p>
                         <div className="flex gap-10">
-                          <p><span className="text-black font-medium uppercase text-xs block mb-1">Date</span> <span className="font-bold text-emerald-900">{details.selectedDate}</span></p>
-                          <p><span className="text-black font-medium uppercase text-xs block mb-1">Time</span> <span className="font-bold text-emerald-900">{details.selectedTime}</span></p>
+                          <p>
+                            <span className="text-black font-medium uppercase text-xs block mb-1">
+                              Date
+                            </span>{" "}
+                            <span className="font-bold text-emerald-900">
+                              {details.selectedDate}
+                            </span>
+                          </p>
+                          <p>
+                            <span className="text-black font-medium uppercase text-xs block mb-1">
+                              Time
+                            </span>{" "}
+                            <span className="font-bold text-emerald-900">
+                              {details.selectedTime}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
-                      <h3 className="font-black text-xl mb-4 text-black
-                     uppercase tracking-tight">Field Location</h3>
+                      <h3 className="font-black text-xl mb-4 text-black uppercase tracking-tight">
+                        Field Location
+                      </h3>
                       <div className="space-y-3 text-sm">
                         <p className="break-words">
-                          <span className="text-black font-medium uppercase text-xs block mb-1">Address</span>
-                          <span className="font-bold leading-relaxed text-emerald-900">{selectedLocation?.address_name || "—"}</span>
+                          <span className="text-black font-medium uppercase text-xs block mb-1">
+                            Address
+                          </span>
+                          <span className="font-bold leading-relaxed text-emerald-900">
+                            {selectedLocation?.address_name || "—"}
+                          </span>
                         </p>
                         <div className="grid grid-cols-2 gap-4">
-                          <p><span className="text-black font-medium uppercase text-xs block mb-1">District</span> <span className="font-bold text-emerald-900">{selectedLocation?.district || details.district || "—"}</span></p>
-                          <p><span className="text-black font-medium uppercase text-xs block mb-1">Pincode</span> <span className="font-bold text-emerald-900">{selectedLocation?.pincode || details.pincode || "—"}</span></p>
+                          <p>
+                            <span className="text-black font-medium uppercase text-xs block mb-1">
+                              District
+                            </span>{" "}
+                            <span className="font-bold text-emerald-900">
+                              {selectedLocation?.district || details.district || "—"}
+                            </span>
+                          </p>
+                          <p>
+                            <span className="text-black font-medium uppercase text-xs block mb-1">
+                              Pincode
+                            </span>{" "}
+                            <span className="font-bold text-emerald-900">
+                              {selectedLocation?.pincode || details.pincode || "—"}
+                            </span>
+                          </p>
                         </div>
-                        <p><span className="text-black font-medium uppercase text-xs block mb-1">Landmark</span> <span className="font-bold text-emerald-900">{details.landmark || "—"}</span></p>
+                        <p>
+                          <span className="text-black font-medium uppercase text-xs block mb-1">
+                            Landmark
+                          </span>{" "}
+                          <span className="font-bold text-emerald-900">
+                            {details.landmark || "—"}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100/50 backdrop-blur-sm shadow-sm">
-                    <h3 className="font-black text-xl mb-4 text-black uppercase tracking-tight">Booking Contact</h3>
+                    <h3 className="font-black text-xl mb-4 text-black uppercase tracking-tight">
+                      Booking Contact
+                    </h3>
                     <div className="grid md:grid-cols-2 gap-6 text-sm">
-                      <p><span className="text-black font-medium uppercase text-xs block mb-1">Booking Type</span> <span className="font-bold text-emerald-900">{bookForOthers ? "Booking for Someone Else" : "Self Booking"}</span></p>
-                      <p><span className="text-black font-medium uppercase text-xs block mb-1">{bookForOthers ? "Beneficiary Name" : "Farmer Name"}</span> <span className="font-bold text-emerald-900">{bookForOthers ? beneficiaryName : (bookingData?.farmer_name || "You")}</span></p>
-                      <p><span className="text-black font-medium uppercase text-xs block mb-1">Phone Number</span> <span className="font-bold text-emerald-900">{bookForOthers ? beneficiaryPhone : farmerPhone}</span></p>
+                      <p>
+                        <span className="text-black font-medium uppercase text-xs block mb-1">
+                          Booking Type
+                        </span>{" "}
+                        <span className="font-bold text-emerald-900">
+                          {bookForOthers ? "Booking for Someone Else" : "Self Booking"}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="text-black font-medium uppercase text-xs block mb-1">
+                          {bookForOthers ? "Beneficiary Name" : "Farmer Name"}
+                        </span>{" "}
+                        <span className="font-bold text-emerald-900">
+                          {bookForOthers ? beneficiaryName : bookingData?.farmer_name || "You"}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="text-black font-medium uppercase text-xs block mb-1">
+                          Phone Number
+                        </span>{" "}
+                        <span className="font-bold text-emerald-900">
+                          {bookForOthers ? beneficiaryPhone : farmerPhone}
+                        </span>
+                      </p>
                     </div>
                   </div>
 
                   <div className="bg-emerald-950/5 rounded-3xl p-8 border border-emerald-950/10 shadow-inner">
-                    <h3 className="font-black text-xl mb-6 text-black uppercase tracking-tight border-b border-emerald-950/5 pb-4">Payment Summary</h3>
+                    <h3 className="font-black text-xl mb-6 text-black uppercase tracking-tight border-b border-emerald-950/5 pb-4">
+                      Payment Summary
+                    </h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-black font-medium">Base Spraying ({baseRate} × {details.acres} acres)</span>
-                        <span className="font-mono text-lg font-bold text-emerald-950">₹{baseTotal.toFixed(2)}</span>
+                        <span className="text-black font-medium">
+                          Base Spraying ({baseRate} × {details.acres} acres)
+                        </span>
+                        <span className="font-mono text-lg font-bold text-emerald-950">
+                          ₹{baseTotal.toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-black font-medium">Platform Fee ({platformFee} × {details.acres} acres)</span>
-                        <span className="font-mono text-lg font-bold text-emerald-950">₹{platformTotal.toFixed(2)}</span>
+                        <span className="text-black font-medium">
+                          Platform Fee ({platformFee} × {details.acres} acres)
+                        </span>
+                        <span className="font-mono text-lg font-bold text-emerald-950">
+                          ₹{platformTotal.toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center text-black font-bold border-t border-emerald-950/5 pt-4">
-                        <span className="uppercase text-xs tracking-widest">Final Rate per Acre</span>
+                        <span className="uppercase text-xs tracking-widest">
+                          Final Rate per Acre
+                        </span>
                         <span className="font-mono">₹{finalRate.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center border-t-2 border-emerald-500/20 pt-6 mt-4">
-                        <span className="text-3xl font-black uppercase tracking-tighter text-black">Total Payable</span>
+                        <span className="text-3xl font-black uppercase tracking-tighter text-black">
+                          Total Payable
+                        </span>
                         <div className="text-right">
-                          <span className="text-4xl font-black text-black font-mono">₹{totalPrice.toFixed(2)}</span>
-                          <p className="text-[10px] text-black uppercase tracking-[0.2em] mt-1 font-bold italic">Inclusive of all taxes</p>
+                          <span className="text-4xl font-black text-black font-mono">
+                            ₹{totalPrice.toFixed(2)}
+                          </span>
+                          <p className="text-[10px] text-black uppercase tracking-[0.2em] mt-1 font-bold italic">
+                            Inclusive of all taxes
+                          </p>
                         </div>
                       </div>
                       <div className="mt-8 pt-4 border-t border-emerald-950/5 flex items-center justify-between">
-                        <span className="text-xs uppercase tracking-[0.2em] font-black text-black">Payment Method</span>
+                        <span className="text-xs uppercase tracking-[0.2em] font-black text-black">
+                          Payment Method
+                        </span>
                         <span className="bg-emerald-600 text-white px-4 py-2 rounded-full border border-emerald-600 shadow-sm font-black text-xs uppercase tracking-widest">
-                          {paymentMethod === "CASH_ON_SERVICE" ? "💵 Cash on Service" : paymentMethod}
+                          {paymentMethod === "CASH_ON_SERVICE"
+                            ? "💵 Cash on Service"
+                            : paymentMethod}
                         </span>
                       </div>
                     </div>
@@ -1452,11 +1558,13 @@ try {
 
                   <div className="bg-amber-100/50 border border-amber-200 rounded-2xl p-5 text-xs text-amber-800 leading-relaxed font-black uppercase tracking-wider text-center flex items-center justify-center gap-3">
                     <span className="text-xl">⚠️</span>
-                    <span>Please verify all details before confirming. provider search flow will start immediately.</span>
+                    <span>
+                      Please verify all details before confirming. provider search
+                      flow will start immediately.
+                    </span>
                   </div>
                 </div>
 
-                {/* Footer Actions */}
                 <div className="p-10 pt-0 flex flex-col sm:flex-row gap-4">
                   <button
                     onClick={() => setShowPreviewModal(false)}
@@ -1476,7 +1584,10 @@ try {
               </div>
             ) : (
               <div className="p-10">
-                <button onClick={onBack} className="absolute top-8 left-8 font-black text-emerald-800 hover:text-emerald-950 transition-colors flex items-center gap-1 uppercase tracking-widest text-xs">
+                <button
+                  onClick={onBack}
+                  className="absolute top-8 left-8 font-black text-emerald-800 hover:text-emerald-950 transition-colors flex items-center gap-1 uppercase tracking-widest text-xs"
+                >
                   ← Back
                 </button>
 
@@ -1507,12 +1618,14 @@ try {
                           setBeneficiaryName("");
                           setBeneficiaryPhone("");
                         }}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none ${bookForOthers ? "bg-green-500" : "bg-gray-300"
-                          }`}
+                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                          bookForOthers ? "bg-green-500" : "bg-gray-300"
+                        }`}
                       >
                         <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${bookForOthers ? "translate-x-8" : "translate-x-1"
-                            }`}
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                            bookForOthers ? "translate-x-8" : "translate-x-1"
+                          }`}
                         />
                       </button>
                     </div>
@@ -1582,13 +1695,11 @@ try {
                       value={details.acres}
                       onChange={(e) => {
                         const value = e.target.value;
-
-                        // allow only numbers + decimal
                         if (/^\d*\.?\d*$/.test(value)) {
                           setDetails({ ...details, acres: value });
                         }
                       }}
-                      onWheel={(e) => e.target.blur()} // 🔥 prevents scroll change
+                      onWheel={(e) => e.target.blur()}
                     />
                   </div>
 
@@ -1671,10 +1782,11 @@ try {
                             onClick={() =>
                               setDetails({ ...details, selectedTime: slot })
                             }
-                            className={`p-3 rounded-lg text-center cursor-pointer text-sm transition-colors ${isSelected
-                              ? "bg-green-600 text-white"
-                              : "bg-gray-100 hover:bg-green-100 text-black"
-                              }`}
+                            className={`p-3 rounded-lg text-center cursor-pointer text-sm transition-colors ${
+                              isSelected
+                                ? "bg-green-600 text-white"
+                                : "bg-gray-100 hover:bg-green-100 text-black"
+                            }`}
                           >
                             {slot}
                           </div>
@@ -1688,16 +1800,18 @@ try {
 
                     <div
                       onClick={() => setPaymentMethod("CASH_ON_SERVICE")}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "CASH_ON_SERVICE"
-                        ? "border-emerald-300 bg-white"
-                        : "border-white/10 bg-white/5 hover:border-white/40"
-                        }`}
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        paymentMethod === "CASH_ON_SERVICE"
+                          ? "border-emerald-300 bg-white"
+                          : "border-white/10 bg-white/5 hover:border-white/40"
+                      }`}
                     >
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === "CASH_ON_SERVICE"
-                          ? "border-green-500"
-                          : "border-gray-300"
-                          }`}
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          paymentMethod === "CASH_ON_SERVICE"
+                            ? "border-green-500"
+                            : "border-gray-300"
+                        }`}
                       >
                         {paymentMethod === "CASH_ON_SERVICE" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
@@ -1706,14 +1820,21 @@ try {
 
                       <div className="flex-1">
                         <p
-                          className={`font-bold text-sm ${paymentMethod === "CASH_ON_SERVICE"
-                            ? "text-emerald-900"
-                            : "text-white"
-                            }`}
+                          className={`font-bold text-sm ${
+                            paymentMethod === "CASH_ON_SERVICE"
+                              ? "text-emerald-900"
+                              : "text-white"
+                          }`}
                         >
                           💵 Cash on Service
                         </p>
-                        <p className={`text-xs mt-0.5 ${paymentMethod === "CASH_ON_SERVICE" ? "text-emerald-800" : "text-emerald-100/70"}`}>
+                        <p
+                          className={`text-xs mt-0.5 ${
+                            paymentMethod === "CASH_ON_SERVICE"
+                              ? "text-emerald-800"
+                              : "text-emerald-100/70"
+                          }`}
+                        >
                           Pay the operator directly after the service is completed
                         </p>
                       </div>

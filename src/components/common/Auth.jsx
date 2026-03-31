@@ -572,6 +572,21 @@ const Auth = ({ onClose, initialRole }) => {
           <button className="w-full bg-white text-emerald-900 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all mt-6 relative z-10">
             {loading ? "Processing..." : "Create Account"}
           </button>
+          <button
+  type="button"
+  onClick={() =>
+    setAuthFlow(
+      role === "farmer"
+        ? "farmer-signin"
+        : role === "provider"
+        ? "provider-signin"
+        : "admin-signin"
+    )
+  }
+  className="text-sm text-white hover:text-emerald-200 block mx-auto font-bold mt-4 uppercase tracking-widest"
+>
+  Already have an account? Sign In
+</button>
         </form>
       </div>
     </div>
