@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import MapLocationPicker from "../../components/maps/MapLocationPicker";
 import { supabase } from "../../lib/supabase";
@@ -10,6 +10,13 @@ const AddAddress = () => {
   const [saving, setSaving] = useState(false);
   const [fetchingAddress, setFetchingAddress] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
+
+  /* ── search state ── */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef(null);
+  const searchWrapperRef = useRef(null);
 
   const [form, setForm] = useState({
     address_name: "",
@@ -147,6 +154,59 @@ const AddAddress = () => {
       }
     );
   };
+
+  /* ================= LOCATION SEARCH ================= */
+
+  const runLocationSearch = useCallback(async (text) => {
+    if (!text || text.trim().length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=6&countrycodes=in`,
+        { headers: { Accept: "application/json" } }
+      );
+      const data = await res.json();
+      setSearchResults(data || []);
+    } catch (err) {
+      console.error("Search error:", err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  const handleSearchInput = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => runLocationSearch(val), 420);
+  };
+
+  const handleSearchResultClick = async (place) => {
+    const lat = parseFloat(place.lat);
+    const lng = parseFloat(place.lon);
+    const loc = { lat, lng };
+
+    setLocation(loc);
+    setSearchQuery(place.display_name);
+    setSearchResults([]);
+
+    await fetchAddressFromCoordinates(lat, lng);
+  };
+
+  /* close suggestions on outside click */
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   /* ================= OPTIONAL AUTO DETECT ON PAGE LOAD ================= */
 
@@ -318,6 +378,140 @@ const AddAddress = () => {
         {/* MAP PICKER */}
 
         <h2 className="font-bold mb-3">Select Field Location</h2>
+
+        {/* ── Search bar ── */}
+        <div ref={searchWrapperRef} style={{ position: "relative", marginBottom: "12px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              background: "#f9fafb",
+              borderRadius: "14px",
+              border: "1.5px solid #d1d5db",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              overflow: "hidden",
+            }}
+          >
+            <span style={{ padding: "0 12px", fontSize: "18px", color: "#6b7280", flexShrink: 0 }}>
+              🔍
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInput}
+              placeholder="Search for a village, city or address…"
+              style={{
+                flex: 1,
+                padding: "13px 0",
+                border: "none",
+                outline: "none",
+                fontSize: "14px",
+                color: "#111827",
+                background: "transparent",
+              }}
+            />
+            {isSearching && (
+              <span style={{ padding: "0 14px", fontSize: "13px", color: "#9ca3af", flexShrink: 0 }}>⏳</span>
+            )}
+            {searchQuery && !isSearching && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(""); setSearchResults([]); }}
+                style={{
+                  padding: "0 14px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  color: "#9ca3af",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* Suggestions dropdown */}
+          {searchResults.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1.5px solid #e5e7eb",
+                borderRadius: "14px",
+                boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                zIndex: 9999,
+                overflow: "hidden",
+              }}
+            >
+              {searchResults.map((place, i) => (
+                <button
+                  key={place.place_id || i}
+                  type="button"
+                  onClick={() => handleSearchResultClick(place)}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "none",
+                    border: "none",
+                    borderBottom: i < searchResults.length - 1 ? "1px solid #f3f4f6" : "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.12s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                >
+                  <span style={{ fontSize: "15px", flexShrink: 0, marginTop: "2px" }}>📍</span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#374151",
+                      lineHeight: "1.45",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {place.display_name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* No results */}
+          {!isSearching && searchQuery.length >= 3 && searchResults.length === 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1.5px solid #e5e7eb",
+                borderRadius: "14px",
+                padding: "16px",
+                textAlign: "center",
+                color: "#9ca3af",
+                fontSize: "13px",
+                zIndex: 9999,
+                boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+              }}
+            >
+              No locations found. Try a different search.
+            </div>
+          )}
+        </div>
 
         <MapLocationPicker onLocationSelect={handleLocationSelect} />
 

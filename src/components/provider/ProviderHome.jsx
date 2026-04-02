@@ -315,6 +315,16 @@ const ProviderHome = ({ userName }) => {
                     {/* Decorative blobs for CTA */}
                     <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -ml-20 -mt-20"></div>
                     <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -mr-20 -mb-20"></div>
+
+                    {/* Support Contact */}
+                    <div className="relative z-10 mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 text-green-100 text-sm font-semibold">
+                        <a href="tel:+919100099575" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-full transition-all">
+                            <span>📞</span> +91 91000 99575
+                        </a>
+                        <a href="https://mail.google.com/mail/?view=cm&to=aerodronemitrasupport@gmail.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-full transition-all">
+                            <span>✉️</span> aerodronemitrasupport@gmail.com
+                        </a>
+                    </div>
                 </div>
             </section>
         </div >

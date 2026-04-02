@@ -706,16 +706,14 @@ const LocationSelectionSection = ({
 }) => {
   return (
     <>
+      {/* ── 3-button grid ── */}
       <div className="grid grid-cols-3 gap-3">
         <button
           type="button"
           onClick={() => setShowAddressModal(true)}
           className="flex items-center justify-center gap-2
-               bg-green-500
-               hover:from-green-700 hover:to-emerald-700
-               text-black font-semibold py-3 rounded-xl
-               shadow-md hover:shadow-lg
-               active:scale-95 transition-all"
+               bg-green-500 text-black font-semibold py-3 rounded-xl
+               shadow-md hover:shadow-lg active:scale-95 transition-all"
         >
           🏠 Saved
         </button>
@@ -724,11 +722,8 @@ const LocationSelectionSection = ({
           type="button"
           onClick={handleSelectOnMap}
           className="flex items-center justify-center gap-2
-               bg-yellow-500
-               hover:from-indigo-700 hover:to-purple-700
-               text-black font-semibold py-3 rounded-xl
-               shadow-md hover:shadow-lg
-               active:scale-95 transition-all"
+               bg-yellow-500 text-black font-semibold py-3 rounded-xl
+               shadow-md hover:shadow-lg active:scale-95 transition-all"
         >
           📍 Map
         </button>
@@ -738,21 +733,15 @@ const LocationSelectionSection = ({
           onClick={captureLocation}
           disabled={capturingLocation || resolvingAddress}
           className="flex items-center justify-center gap-2
-               bg-blue-500
-               hover:from-blue-500 hover:to-blue-600
-               text-black font-semibold py-3 rounded-xl
-               shadow-md hover:shadow-lg
-               active:scale-95 transition-all
+               bg-blue-500 text-black font-semibold py-3 rounded-xl
+               shadow-md hover:shadow-lg active:scale-95 transition-all
                disabled:opacity-50"
         >
-          {capturingLocation
-            ? "GPS..."
-            : resolvingAddress
-            ? "..."
-            : "📡 GPS"}
+          {capturingLocation ? "GPS..." : resolvingAddress ? "..." : "📡 GPS"}
         </button>
       </div>
 
+      {/* ── Selected location card ── */}
       {selectedLocation && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-4 space-y-1">
           <p className="text-sm font-semibold text-green-700">
@@ -1066,6 +1055,24 @@ const BookingForm = ({ bookingData, onBack }) => {
         bookingState: { selectedLocation },
       },
     });
+  };
+
+  const handleSearchLocationSelect = ({ lat, lng, addressName, district, state, pincode }) => {
+    setSelectedLocation({
+      address_name: addressName,
+      latitude: lat,
+      longitude: lng,
+      district: district || "",
+      state: state || "",
+      pincode: pincode || "",
+    });
+
+    setDetails((prev) => ({
+      ...prev,
+      district: district || prev.district,
+      state: state || prev.state,
+      pincode: pincode || prev.pincode,
+    }));
   };
 
   const handleAddressSelected = (addr) => {

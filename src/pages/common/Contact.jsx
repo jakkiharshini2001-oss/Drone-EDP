@@ -46,20 +46,25 @@ const Contact = ({ embedded = false }) => {
               <p className="text-white/80 text-xs leading-relaxed">123 Agri Technology Park<br />Silicon Valley Drive, Hyderabad</p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-2xl p-8 rounded-[3rem] shadow-2xl text-center border border-white/20 hover:border-blue-400/50 transition-all group">
+            <a
+              href="https://mail.google.com/mail/?view=cm&to=aerodronemitrasupport@gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/10 backdrop-blur-2xl p-8 rounded-[3rem] shadow-2xl text-center border border-white/20 hover:border-blue-400/50 transition-all group block cursor-pointer"
+            >
               <div className="bg-blue-500/20 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-400">
                 <Mail size={24} />
               </div>
               <h3 className="font-bold text-white mb-2">{t('contact.mailUs')}</h3>
-              <p className="text-white/80 text-xs leading-relaxed">support@agridhara.com<br />partner@agridhara.com</p>
-            </div>
+              <span className="text-white/80 text-xs leading-relaxed hover:text-blue-300 underline underline-offset-2 transition-colors break-all">aerodronemitrasupport@gmail.com</span>
+            </a>
 
             <div className="bg-white/10 backdrop-blur-2xl p-8 rounded-[3rem] shadow-2xl text-center border border-white/20 hover:border-amber-400/50 transition-all group">
               <div className="bg-amber-500/20 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-6 text-amber-400">
                 <Phone size={24} />
               </div>
               <h3 className="font-bold text-white mb-2">{t('contact.callUs')}</h3>
-              <p className="text-white/80 text-xs leading-relaxed">1800-AGRI-DHARA<br />+91 40-23456789</p>
+              <a href="tel:+919100099575" className="text-white/80 text-xs leading-relaxed hover:text-amber-300 underline underline-offset-2 transition-colors">+91 91000 99575</a>
             </div>
           </div>
 

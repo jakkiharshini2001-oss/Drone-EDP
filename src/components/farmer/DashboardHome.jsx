@@ -446,6 +446,16 @@ const DashboardHome = ({ userName, onViewServices }) => {
           
           {/* Decorative glow */}
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+          {/* Support Contact */}
+          <div className="relative z-10 mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 text-white/70 text-sm font-semibold">
+            <a href="tel:+919100099575" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-full transition-all text-white">
+              <span>📞</span> +91 91000 99575
+            </a>
+            <a href="https://mail.google.com/mail/?view=cm&to=aerodronemitrasupport@gmail.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-full transition-all text-white">
+              <span>✉️</span> aerodronemitrasupport@gmail.com
+            </a>
+          </div>
         </div>
       </section >
     </div >

@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useBooking } from "../context/BookingContext";
 import ProtectedRoute from "../components/common/ProtectedRoute";
@@ -35,6 +35,7 @@ import ProviderVerification from "../pages/provider/ProviderVerification";
 const AppRoutes = () => {
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { userData } = useAuth();
   const { bookingFlow, setBookingFlow, handleFinalBooking } = useBooking();
 
@@ -65,7 +66,7 @@ const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={["farmer"]}>
-            <div className="pt-0">
+            <div className="pt-0" key={location.key}>
               <DashboardHome
                 userName={userData?.full_name}
                 onViewServices={() => navigate("/services")}
@@ -81,7 +82,7 @@ const AppRoutes = () => {
         path="/my-bookings"
         element={
           <ProtectedRoute allowedRoles={["farmer"]}>
-            <MyBookings userId={userData?.id} />
+            <MyBookings key={location.key} userId={userData?.id} />
           </ProtectedRoute>
         }
       />
@@ -91,6 +92,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["farmer"]}>
             <Services
+              key={location.key}
               onSelectService={(service) =>
                 navigate(`/service/${service.id}`)
               }
@@ -178,7 +180,7 @@ const AppRoutes = () => {
         path="/provider/dashboard"
         element={
           <ProtectedRoute allowedRoles={["provider"]}>
-            <ProviderDashboard />
+            <ProviderDashboard key={location.key} />
           </ProtectedRoute>
         }
       />
@@ -196,7 +198,7 @@ const AppRoutes = () => {
         path="/provider/services"
         element={
           <ProtectedRoute allowedRoles={["provider"]}>
-            <ProviderServices />
+            <ProviderServices key={location.key} />
           </ProtectedRoute>
         }
       />
@@ -205,7 +207,7 @@ const AppRoutes = () => {
         path="/provider/bookings"
         element={
           <ProtectedRoute allowedRoles={["provider"]}>
-            <ProviderBookings />
+            <ProviderBookings key={location.key} />
           </ProtectedRoute>
         }
       />
@@ -214,7 +216,7 @@ const AppRoutes = () => {
         path="/provider/earnings"
         element={
           <ProtectedRoute allowedRoles={["provider"]}>
-            <ProviderEarnings />
+            <ProviderEarnings key={location.key} />
           </ProtectedRoute>
         }
       />
@@ -223,7 +225,7 @@ const AppRoutes = () => {
         path="/provider/home"
         element={
           <ProtectedRoute allowedRoles={["provider"]}>
-            <ProviderHome userName={userData?.full_name} />
+            <ProviderHome key={location.key} userName={userData?.full_name} />
           </ProtectedRoute>
         }
       />

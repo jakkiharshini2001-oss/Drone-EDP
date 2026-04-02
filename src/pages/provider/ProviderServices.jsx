@@ -124,6 +124,20 @@ export default function ProviderServices() {
     fetchData();
   }, []);
 
+  // ── Realtime: auto-refetch when services change ──────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel("provider-services-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "provider_services" },
+        () => { fetchData(); }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
+
   async function fetchData() {
     try {
       setLoading(true);
