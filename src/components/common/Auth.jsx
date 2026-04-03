@@ -308,7 +308,7 @@ const Auth = ({ onClose, initialRole }) => {
             <img src={logo} className="w-20 mx-auto mb-4 drop-shadow-lg" alt="logo" />
             <h2 className="text-4xl font-black uppercase tracking-tighter">Choose your role</h2>
             <p className="text-emerald-100/70 text-sm mt-2 font-medium tracking-wide">
-              Select how you want to use Agri Dhara
+              Select how you want to use Aerodronemitra
             </p>
           </div>
 

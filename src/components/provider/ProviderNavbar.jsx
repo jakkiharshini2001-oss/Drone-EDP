@@ -44,7 +44,7 @@ const ProviderNavbar = ({ toggleSidebar, isSidebarCollapsed, toggleMobileSidebar
                                 <Globe size={20} strokeWidth={2.5} />
                             </div>
                             <span className="text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700">
-                                AGRI DHARA
+                                Aerodronemitra
                             </span>
                         </div>
                     </div>

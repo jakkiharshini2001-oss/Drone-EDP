@@ -152,7 +152,7 @@ const translations = {
 
     // Footer
     footer: {
-      tagline: '© 2026 AGRI DHARA. Built for the future of farming.',
+      tagline: '© 2026 Aerodronemitra . Built for the future of farming.',
       areYouProvider: 'Are you a Service Provider?',
       loginAsProvider: 'Provider',
     },
@@ -311,7 +311,7 @@ const translations = {
 
     // Footer
     footer: {
-      tagline: '© 2026 AGRI DHARA. खेती के भविष्य के लिए बनाया गया।',
+      tagline: '© 2026 Aerodronemitra . खेती के भविष्य के लिए बनाया गया।',
       areYouProvider: 'क्या आप सेवा प्रदाता हैं?',
       loginAsProvider: 'प्रोवाइडर के रूप में लॉगिन',
     },
@@ -470,7 +470,7 @@ const translations = {
 
     // Footer
     footer: {
-      tagline: '© 2026 AGRI DHARA. వ్యవసాయం యొక్క భవిష్యత్తు కోసం నిర్మించబడింది.',
+      tagline: '© 2026 Aerodronemitra . వ్యవసాయం యొక్క భవిష్యత్తు కోసం నిర్మించబడింది.',
       areYouProvider: 'మీరు సేవా ప్రొవైడరా?',
       loginAsProvider: 'ప్రొవైడర్‌గా లాగిన్ చేయండి',
     },
