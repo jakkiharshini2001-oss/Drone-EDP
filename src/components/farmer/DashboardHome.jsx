@@ -3,32 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import droneImg from '../../assets/Drone spraying Service.jpeg';
-import riceImg from '../../assets/Mini rice mill.jpeg';
-import tractorImg from '../../assets/Tractor Rental service.jpeg';
-import tillerImg from '../../assets/Power Tillers & Rotavators.jpeg';
 import sprayingImg from '../../assets/irrigation_system.png';
 
 
 
 const heroSlides = [
-  { img: droneImg, title: "Precision Drone Spraying", text: "Efficient, targeted aerial application designed to maximize coverage while reducing chemical waste." },
-  { img: tractorImg, title: "Tractor Rental Services", text: "Versatile tractor fleet available for all your heavy-duty agricultural needs." },
-  { img: riceImg, title: "Mini Rice Mill", text: "Efficient local rice processing and milling services for small-scale farmers." },
-  { img: tillerImg, title: "Power Tillers & Rotavators", text: "High-performance soil preparation equipment available for your land." }
+  { img: droneImg, title: "Precision Drone Spraying", text: "Efficient, targeted aerial application designed to maximize coverage while reducing chemical waste." }
 ];
+
+import solarImg from '../../assets/Solar Panel Installation.png';
 
 const imgMap = {
   "Drone Spraying Service": droneImg,
-  "Mini Rice Mill": riceImg,
-  "Power Tillers & Rotavators": tillerImg,
-  "Tractor Rental Services": tractorImg,
+  "Solar Panel Installation": solarImg,
 };
 
 const descMap = {
   "Drone Spraying Service": "Precision pesticide and fertilizer application using advanced drone technology.",
-  "Mini Rice Mill": "Efficient local rice processing and milling services for small-scale farmers.",
-  "Power Tillers & Rotavators": "High-performance soil preparation equipment available for your land.",
-  "Tractor Rental Services": "Versatile tractor fleet available for all your heavy-duty agricultural needs.",
+  "Solar Panel Installation": "Professional solar pump and solar panel installation services for farms.",
 };
 
 const DashboardHome = ({ userName, onViewServices }) => {
@@ -156,6 +148,15 @@ const DashboardHome = ({ userName, onViewServices }) => {
       desc: descMap[cat.name] || "Agriculture service provider support.",
     }));
 
+    if (!mapped.find(cat => cat.title === "Solar Panel Installation")) {
+      mapped.push({
+        id: 'solar-coming-soon',
+        title: "Solar Panel Installation",
+        img: solarImg,
+        desc: descMap["Solar Panel Installation"]
+      });
+    }
+
     setServiceCategories(mapped);
   };
 
@@ -281,20 +282,32 @@ const DashboardHome = ({ userName, onViewServices }) => {
 
           {/* Service Cards Redesigned */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {serviceCategories.map((service, idx) => (
+            {serviceCategories.map((service, idx) => {
+              const isSolar = service.title === "Solar Panel Installation";
+              return (
               <div
                 key={service.id}
-                onClick={() => navigate(`/service/${service.id}`)}
-                className={`group relative bg-white/10 backdrop-blur-xl rounded-[2.5rem] overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/20 flex flex-col hover:bg-white/20 hover:-translate-y-2`}
+                onClick={isSolar ? undefined : onViewServices}
+                className={`group relative bg-white/10 backdrop-blur-xl rounded-[2.5rem] overflow-hidden ${isSolar ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer hover:bg-white/20 hover:-translate-y-2'} shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/20 flex flex-col`}
               >
                 {/* Card Header with Image */}
                 <div className="h-44 overflow-hidden relative">
                   <img
                     src={service.img}
                     alt={service.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className={`w-full h-full object-cover transition-transform duration-700 ${isSolar ? 'blur-[1px] grayscale' : 'group-hover:scale-110'}`}
                   />
-                  <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300"></div>
+                  {!isSolar && <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300"></div>}
+                  {isSolar && (
+                    <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10">
+                      Coming Soon
+                    </div>
+                  )}
+                  {isSolar && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+                      <span className="text-white text-lg font-bold tracking-wide px-4 py-2 bg-yellow-600/90 rounded-full border border-yellow-400">🔒 Coming Soon</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Content */}
@@ -309,13 +322,19 @@ const DashboardHome = ({ userName, onViewServices }) => {
                   </div>
 
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
-                    <span className="text-emerald-400 font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
-                      View Service <ChevronRight size={16} />
-                    </span>
+                    {isSolar ? (
+                       <span className="text-white/50 font-black text-xs uppercase tracking-widest flex items-center gap-2">
+                         Coming Soon
+                       </span>
+                    ) : (
+                      <span className="text-emerald-400 font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
+                        View Services <ChevronRight size={16} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="mt-16 text-center">

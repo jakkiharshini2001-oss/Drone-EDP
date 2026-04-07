@@ -2,15 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 // Using your exact filenames from image_ad9d45.jpg
 import droneVid from '../../assets/Crop_Drone_Spraying_Video_Generated.mp4';
-import powerTillerVid from '../../assets/Power_Tiller_Farming_Video_Generated.mp4';
-import harvestVid from '../../assets/All-in-One Harvesting.mp4';
-import tractorVid from '../../assets/Flexible Tractor Rentals.mp4';
 
 const slides = [
-  { vid: droneVid, title: "Precision Drone Spraying", text: "Efficient, targeted aerial application designed to maximize coverage." },
-  { vid: powerTillerVid, title: "High-Performance Power Tillers", text: "Effortlessly prep your soil with our rugged power tillers." },
-  { vid: harvestVid, title: "All-in-One Harvesting Solutions", text: "Experience the future of farming with our comprehensive all-in-one harvesting services." },
-  { vid: tractorVid, title: "Flexible Tractor Rentals", text: "Get the power you need without the upfront cost." }
+  { vid: droneVid, title: "Precision Drone Spraying", text: "Efficient, targeted aerial application designed to maximize coverage." }
 ];
 
 const VideoSlider = () => {

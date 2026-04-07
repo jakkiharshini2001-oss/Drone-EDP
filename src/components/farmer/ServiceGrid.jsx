@@ -1,15 +1,9 @@
 import React from 'react';
 // Using your image assets from image_ad9d45.jpg
 import droneImg from '../../assets/Drone spraying Service.jpeg';
-import riceImg from '../../assets/Mini rice mill.jpeg';
-import tractorImg from '../../assets/Tractor Rental service.jpeg';
-import tillerImg from '../../assets/Power Tillers & Rotavators.jpeg';
 
 const services = [
-  { title: "Drone Spraying Service", img: droneImg, desc: "Precision pesticide and fertilizer application." },
-  { title: "Mini Rice Mill", img: riceImg, desc: "Efficient local rice processing and milling." },
-  { title: "Power Tillers & Rotavators", img: tillerImg, desc: "High-performance soil preparation equipment." },
-  { title: "Tractor Rental Services", img: tractorImg, desc: "Versatile tractor fleet for all needs." }
+  { title: "Drone Spraying Service", img: droneImg, desc: "Precision pesticide and fertilizer application." }
 ];
 
 const ServiceGrid = () => (

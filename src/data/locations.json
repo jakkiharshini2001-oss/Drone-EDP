@@ -11,7 +11,8 @@
       "Koyyuru",
       "Munchingi Puttu",
       "Paderu",
-      "Peda Bayalu"
+      "Peda Bayalu",
+      "others"
     ],
     "Anakapalli": [
       "Anakapalle",
@@ -37,7 +38,8 @@
       "Ravikamatham",
       "Rolugunta",
       "Sabbavaram",
-      "Sarvasiddhi Rayavaram"
+      "Sarvasiddhi Rayavaram",
+      "others"
     ],
     "Anantapuram": [
       "Anantapur",
@@ -70,7 +72,8 @@
       "Vajrakarur",
       "Vidapanakal",
       "Yadiki",
-      "Yellanur"
+      "Yellanur",
+      "others"
     ],
     "Annamayya": [
       "Beerangi Kothakota",
@@ -97,7 +100,8 @@
       "Sodam",
       "Somala",
       "Thamballapalle",
-      "Vayalpad"
+      "Vayalpad",
+      "others"
     ],
     "Bapatla": [
       "Amruthalur",
@@ -118,7 +122,8 @@
       "Tsundur",
       "Vemuru",
       "Vetapalem",
-      "Yeddanapudi"
+      "Yeddanapudi",
+      "others"
     ],
     "Chittoor": [
       "Baireddipalle",
@@ -148,7 +153,8 @@
       "Vedurukuppam",
       "Venkatagirikota",
       "Vijayapuram",
-      "Yadamarri"
+      "Yadamarri",
+      "others"
     ],
     "Dr. B. R. Ambedkar Konaseema": [
       "Ainavilli",
@@ -172,7 +178,8 @@
       "Ramachandrapuram",
       "Razole",
       "Sakhinetipalle",
-      "Uppalaguptam"
+      "Uppalaguptam",
+      "others"
     ],
     "East Godavari": [
       "Anaparthi",
@@ -193,7 +200,8 @@
       "Rangampeta",
       "Seethanagaram",
       "Tallapudi",
-      "Undrajavaram"
+      "Undrajavaram",
+      "others"
     ],
     "Eluru": [
       "Bhimadole",
@@ -216,7 +224,8 @@
       "Polavaram",
       "T. Narasapuram",
       "Unguturu",
-      "Velairpadu"
+      "Velairpadu",
+      "others"
     ],
     "Guntur": [
       "Chebrolu",
@@ -236,7 +245,8 @@
       "Tadikonda",
       "Tenali",
       "Thullur",
-      "Vatticherukuru"
+      "Vatticherukuru",
+      "others"
     ],
     "Kakinada": [
       "Gandepalle",
@@ -259,7 +269,8 @@
       "Tuni",
       "Yeleswaram",
       "Kakinada Rural",
-      "Kakinada Urban"
+      "Kakinada Urban",
+      "others"
     ],
     "Krishna": [
       "Avanigadda",
@@ -286,7 +297,8 @@
       "Penamaluru",
       "Thotlavalluru",
       "Unguturu",
-      "Vuyyuru"
+      "Vuyyuru",
+      "others"
     ],
     "Kurnool": [
       "Adoni Rural",
@@ -315,7 +327,8 @@
       "Pedda Kadubur",
       "Tuggali",
       "Veldurthi",
-      "Yemmiganur"
+      "Yemmiganur",
+      "others"
     ],
     "NTR": [
       "A. Konduru",
@@ -337,7 +350,8 @@
       "Vijayawada North",
       "Vijayawada Rural",
       "Vijayawada West",
-      "Vissannapeta"
+      "Vissannapeta",
+      "others"
     ],
     "Palnadu": [
       "Amaravathi",
@@ -367,7 +381,8 @@
       "Sattenapalle",
       "Savalyapuram",
       "Veldurthi",
-      "Vinukonda"
+      "Vinukonda",
+      "others"
     ],
     "Prakasam": [
       "Addanki",
@@ -399,7 +414,8 @@
       "Tangutur",
       "Thallur",
       "Voletivaripalem",
-      "Zarugumilli"
+      "Zarugumilli",
+      "others"
     ],
     "Sri Potti Sriramulu Nellore": [
       "Allur",
@@ -435,7 +451,8 @@
       "Udayagiri",
       "Venkatachalam",
       "Vidavaluru",
-      "Vinjamuru"
+      "Vinjamuru",
+      "others"
     ],
     "Sri Sathya Sai": [
       "Agali",
@@ -469,7 +486,8 @@
       "Somandepalle",
       "Talupula",
       "Tanakal",
-      "Tadimarri"
+      "Tadimarri",
+      "others"
     ],
     "Srikakulam": [
       "Amadalavalasa",
@@ -501,7 +519,8 @@
       "Sompeta",
       "Srikakulam",
       "Tekkali",
-      "Vajrapukothuru"
+      "Vajrapukothuru",
+      "others"
     ],
     "Tirupati": [
       "Balayapalli",
@@ -538,7 +557,8 @@
       "Varadaiahpalem",
       "Venkatagiri",
       "Yerpedu",
-      "Yerravaripalem"
+      "Yerravaripalem",
+      "others"
     ],
     "Visakhapatnam": [
       "Anandapuram",
@@ -551,7 +571,8 @@
       "Pedagantyada",
       "Pendurthi",
       "Seethammadhara",
-      "Visakhapatnam Rural"
+      "Visakhapatnam Rural",
+      "others"
     ],
     "Vizianagaram": [
       "Badangi",
@@ -580,7 +601,8 @@
       "Therlam",
       "Vangara",
       "Vepada",
-      "Vizianagaram"
+      "Vizianagaram",
+      "others"
     ],
     "West Godavari": [
       "Achanta",
@@ -601,7 +623,8 @@
       "Tanuku",
       "Undi",
       "Veeravasaram",
-      "Yelamanchili"
+      "Yelamanchili",
+      "others"
     ],
     "YSR Kadapa": [
       "Atlur",
@@ -642,7 +665,8 @@
       "Vempalle",
       "Vemula",
       "Vontimitta",
-      "Yerraguntla"
+      "Yerraguntla",
+      "others"
     ]
   },
   "Telangana": {
@@ -662,7 +686,8 @@
       "Sirikonda",
       "Talamadugu",
       "Tamsi",
-      "Utnoor"
+      "Utnoor",
+      "others"
     ],
     "Bhadradri Kothagudem": [
       "Allapalli",
@@ -684,7 +709,8 @@
       "Pinapaka",
       "Sujathanagar",
       "Tekulapalli",
-      "Yellandu"
+      "Yellandu",
+      "others"
     ],
     "Hanumakonda": [
       "Athmakur",
@@ -700,7 +726,8 @@
       "Nadikuda",
       "Parkal",
       "Shayampet",
-      "Velair"
+      "Velair",
+      "others"
     ],
     "Hyderabad": [
       "Amberpet",
@@ -718,7 +745,8 @@
       "Saidabad",
       "Secunderabad",
       "Shaikpet",
-      "Tirumalagiri"
+      "Tirumalagiri",
+      "others"
     ],
     "Jagtial": [
       "Dharmapuri",
@@ -733,7 +761,8 @@
       "Metpalli",
       "Pegadapalli",
       "Raikal",
-      "Sarangapur"
+      "Sarangapur",
+      "others"
     ],
     "Jangaon": [
       "Bachannapet",
@@ -746,7 +775,8 @@
       "Palakurthi",
       "Raghunathpalle",
       "Tharigoppula",
-      "Zaffergadh"
+      "Zaffergadh",
+      "others"
     ],
     "Jayashankar Bhupalpally": [
       "Bhupalpally",
@@ -758,7 +788,8 @@
       "Mogullapalle",
       "Mutharam Mahadevpur",
       "Regonda",
-      "Tekumatla"
+      "Tekumatla",
+      "others"
     ],
     "Jogulamba Gadwal": [
       "Alampur",
@@ -772,7 +803,8 @@
       "Manopad",
       "Rajoli",
       "Undavelly",
-      "Waddepalli"
+      "Waddepalli",
+      "others"
     ],
     "Kamareddy": [
       "Banswada",
@@ -791,7 +823,8 @@
       "Pitlam",
       "Rajampet",
       "Tadwai",
-      "Yellareddy"
+      "Yellareddy",
+      "others"
     ],
     "Karimnagar": [
       "Chigurumamidi",
@@ -806,7 +839,8 @@
       "Ramadugu",
       "Shankarapatnam",
       "Thimmapur",
-      "Veenavanka"
+      "Veenavanka",
+      "others"
     ],
     "Khammam": [
       "Bonakal",
@@ -829,7 +863,8 @@
       "Thirumalayapalem",
       "Vemsoor",
       "Wyra",
-      "Yerrupalem"
+      "Yerrupalem",
+"others"
     ],
     "Komaram Bheem Asifabad": [
       "Asifabad",
@@ -843,7 +878,8 @@
       "Penchikalpet",
       "Rebbena",
       "Sirpur T",
-      "Sirpur U"
+      "Sirpur U",
+      "others"
     ],
     "Mahabubabad": [
       "Bayyaram",
@@ -859,7 +895,8 @@
       "Maripeda",
       "Narsimhulapet",
       "Nellikudur",
-      "Thorrur"
+      "Thorrur",
+      "others"
     ],
     "Mahabubnagar": [
       "Addakal",
@@ -874,7 +911,8 @@
       "Midjil",
       "Mohammadabad",
       "Moosapet",
-      "Nawabpet"
+      "Nawabpet",
+      "others"
     ],
     "Mancherial": [
       "Bellampally",
@@ -892,7 +930,8 @@
       "Naspur",
       "Nennel",
       "Tandur",
-      "Vemanpally"
+      "Vemanpally",
+      "others"
     ],
     "Medak": [
       "Alladurg",
@@ -908,7 +947,8 @@
       "Shankarampet R",
       "Tekmal",
       "Tupran",
-      "Yeldurthy"
+      "Yeldurthy",
+      "others"
     ],
     "Medchal Malkajgiri": [
       "Alwal",
@@ -924,7 +964,8 @@
       "Medchal",
       "Quthbullapur",
       "Shamirpet",
-      "Uppal"
+      "Uppal",
+      "others"
     ],
     "Mulugu": [
       "Eturnagaram",
@@ -935,7 +976,8 @@
       "Tadvai",
       "Venkatapur",
       "Venkatapuram",
-      "Wazeedu"
+      "Wazeedu",
+      "others"
     ],
     "Nagar Kurnool": [
       "Achampet",
@@ -953,7 +995,8 @@
       "Telkapalle",
       "Thimmajipet",
       "Uppununthala",
-      "Vangoor"
+      "Vangoor",
+      "others"
     ],
     "Nalgonda": [
       "Chandampet",
@@ -972,7 +1015,8 @@
       "Nidamanur",
       "Pedda Adiserlapally",
       "Thipparthy",
-      "Tirumalagiri Sagar"
+      "Tirumalagiri Sagar",
+      "others"
     ],
     "Narayanpet": [
       "Damaragidda",
@@ -983,7 +1027,8 @@
       "Makthal",
       "Marikal",
       "Narayanpet",
-      "Utkoor"
+      "Utkoor",
+      "others"
     ],
     "Nirmal": [
       "Basar",
@@ -1000,7 +1045,8 @@
       "Nirmal",
       "Pembi",
       "Sarangapur",
-      "Soan"
+      "Soan",
+      "others"
     ],
     "Nizamabad": [
       "Armur",
@@ -1024,7 +1070,8 @@
       "Sirkonda",
       "Varni",
       "Velpur",
-      "Yedapally"
+      "Yedapally",
+      "others"
     ],
     "Peddapalli": [
       "Anthergaon",
@@ -1037,7 +1084,8 @@
       "Peddapalli",
       "Ramagundam",
       "Srirampur",
-      "Sultanabad"
+      "Sultanabad",
+      "others"
     ],
     "Rajanna Sircilla": [
       "Boinpalli",
@@ -1049,7 +1097,8 @@
       "Rudrangi",
       "Sircilla",
       "Thangallapalli",
-      "Vemulawada"
+      "Vemulawada",
+      "others"
     ],
     "Rangareddy": [
       "Abdullapurmet",
@@ -1069,7 +1118,8 @@
       "Shamshabad",
       "Shankarpally",
       "Talakondapally",
-      "Yacharam"
+      "Yacharam",
+      "others"
     ],
     "Sangareddy": [
       "Ameenpur",
@@ -1092,7 +1142,8 @@
       "Sadasivpet",
       "Sangareddy",
       "Vatpally",
-      "Zahirabad"
+      "Zahirabad",
+      "others"
     ],
     "Siddipet": [
       "Akkannapet",
@@ -1114,7 +1165,8 @@
       "Siddipet Rural",
       "Siddipet Urban",
       "Thoguta",
-      "Wargal"
+      "Wargal",
+      "others"
     ],
     "Suryapet": [
       "Ananthagiri",
@@ -1136,7 +1188,8 @@
       "Penpahad",
       "Suryapet",
       "Thirumalagiri",
-      "Thungathurthi"
+      "Thungathurthi",
+      "others"
     ],
     "Vikarabad": [
       "Bantwaram",
@@ -1156,7 +1209,8 @@
       "Pudur",
       "Tandur",
       "Vikarabad",
-      "Yalal"
+      "Yalal",
+      "others"
     ],
     "Wanaparthy": [
       "Amarchintha",
@@ -1170,7 +1224,8 @@
       "Peddamandadi",
       "Revally",
       "Srirangapur",
-      "Wanaparthy"
+      "Wanaparthy",
+      "others"
     ],
     "Warangal": [
       "Duggondi",
@@ -1181,7 +1236,8 @@
       "Parvathagiri",
       "Raiparthy",
       "Sangem",
-      "Warangal"
+      "Warangal",
+      "others"
     ],
     "Yadadri Bhuvanagiri": [
       "Addaguduru",
@@ -1197,7 +1253,8 @@
       "Ramannapet",
       "Thurkapally",
       "Valigonda",
-      "Yadagirigutta"
+      "Yadagirigutta",
+      "others"
     ]
   }
 }
