@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import backgroundImg from '../../assets/background.jpg';
 
 const Contact = ({ embedded = false }) => {
   const { t } = useLanguage();
@@ -19,7 +20,18 @@ const Contact = ({ embedded = false }) => {
   };
 
   return (
-    <div className={`${embedded ? 'pb-10 pt-0' : 'pt-24 min-h-screen'} bg-transparent relative overflow-hidden `}>
+    <div className={`${embedded ? 'pb-10 pt-0' : 'pt-[72px] min-h-screen'} relative overflow-hidden ${embedded ? 'bg-transparent' : 'bg-emerald-950'}`}>
+      {!embedded && (
+        <>
+          {/* Background image */}
+          <div
+            className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity"
+            style={{ backgroundImage: `url('${backgroundImg}')` }}
+          />
+          {/* Emerald gradient overlay */}
+          <div className="fixed inset-0 z-0 bg-gradient-to-b from-emerald-950/80 via-green-900/80 to-black/95" />
+        </>
+      )}
 
       <div className="relative z-10">
         {/* Hero Header */}

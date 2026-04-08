@@ -1,18 +1,30 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import backgroundImg from '../../assets/background.jpg';
 
 const About = ({ embedded = false }) => {
   const { t } = useLanguage();
 
 
   return (
-    <div className={`${embedded ? 'py-10' : 'pt-32'} bg-transparent min-h-screen relative overflow-hidden`}>
+    <div className={`${embedded ? 'py-10' : 'pt-[72px]'} min-h-screen relative overflow-hidden ${embedded ? 'bg-transparent' : 'bg-emerald-950'}`}>
+      {!embedded && (
+        <>
+          {/* Background image */}
+          <div
+            className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity"
+            style={{ backgroundImage: `url('${backgroundImg}')` }}
+          />
+          {/* Emerald gradient overlay */}
+          <div className="fixed inset-0 z-0 bg-gradient-to-b from-emerald-950/80 via-green-900/80 to-black/95" />
+        </>
+      )}
 
 
       <div className="relative z-10">
 
         {/* Hero Section */}
-        <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
+        <section className="relative flex items-start justify-center overflow-hidden py-8">
 
           <div className="relative z-10 text-center px-10 py-12 md:py-16 bg-white/20 backdrop-blur-2xl border border-white/40 rounded-[6rem] shadow-2xl max-w-5xl mx-auto flex flex-col items-center gap-6">
             <h1 className="text-5xl md:text-6xl font-black text-white leading-tight drop-shadow-xl ">

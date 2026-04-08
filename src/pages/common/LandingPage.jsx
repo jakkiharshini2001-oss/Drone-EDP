@@ -1,11 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import VideoSlider from '../../components/common/VideoSlider';
 import Features from '../../components/common/Features';
 import About from './About';
 import Contact from './Contact';
 import ScrollReveal from '../../components/common/ScrollReveal';
+import Auth from '../../components/common/Auth';
 
 const LandingPage = () => {
+    const [showAuth, setShowAuth] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 10) {
+                setShowAuth(true);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <div className="pt-[72px] min-h-screen relative overflow-hidden bg-emerald-950">
             {/* Thematic Drone/Village Background */}
@@ -36,6 +50,8 @@ const LandingPage = () => {
                     </div>
                 </ScrollReveal>
             </div>
+            
+            {showAuth && <Auth onClose={() => setShowAuth(false)} initialRole="farmer" />}
         </div>
     );
 };

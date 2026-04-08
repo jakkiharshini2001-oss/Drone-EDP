@@ -4,14 +4,24 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import droneImg from '../../assets/Drone spraying Service.jpeg';
 import sprayingImg from '../../assets/irrigation_system.png';
-
-
-
-const heroSlides = [
-  { img: droneImg, title: "Precision Drone Spraying", text: "Efficient, targeted aerial application designed to maximize coverage while reducing chemical waste." }
-];
-
 import solarImg from '../../assets/Solar Panel Installation.png';
+import img1 from '../../assets/img 1.png';
+import img2 from '../../assets/img 2.png';
+
+const SLIDE_DURATION = 5000; // 5 seconds per slide
+
+// Only slide 0 has content — slides 1 & 2 are pure images
+const heroSlides = [
+  {
+    img: droneImg,
+    title: "Precision Drone Spraying",
+    text: "Efficient, targeted aerial application designed to maximize coverage while reducing chemical waste.",
+    badge: "🚁 Aerial Tech",
+    hasContent: true
+  },
+  { img: img1, hasContent: false },
+  { img: img2, hasContent: false }
+];
 
 const imgMap = {
   "Drone Spraying Service": droneImg,
@@ -95,17 +105,31 @@ const DashboardHome = ({ userName, onViewServices }) => {
     setCurrentHero((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
   }, []);
 
+  const [progress, setProgress] = useState(0);
+  const progressRef = useRef(null);
+
   const resetHeroTimer = useCallback(() => {
     if (heroTimerRef.current) clearInterval(heroTimerRef.current);
-    heroTimerRef.current = setInterval(nextHero, 7000);
+    if (progressRef.current) clearInterval(progressRef.current);
+    setProgress(0);
+    const startTime = Date.now();
+    progressRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
+      setProgress(pct);
+    }, 30);
+    heroTimerRef.current = setTimeout(() => {
+      nextHero();
+    }, SLIDE_DURATION);
   }, [nextHero]);
 
   useEffect(() => {
     resetHeroTimer();
     return () => {
-      if (heroTimerRef.current) clearInterval(heroTimerRef.current);
+      if (heroTimerRef.current) clearTimeout(heroTimerRef.current);
+      if (progressRef.current) clearInterval(progressRef.current);
     };
-  }, [resetHeroTimer]);
+  }, [resetHeroTimer, currentHero]);
 
   const handleManualHeroNav = (direction) => {
     if (direction === 'next') nextHero();
@@ -190,70 +214,139 @@ const DashboardHome = ({ userName, onViewServices }) => {
   };
 
   return (
-    <div className="bg-transparent">
-      {/* Hero Section */}
-      <div className="relative h-screen w-full overflow-hidden group mt-0">
-        <img
-          key={heroSlides[currentHero].img}
-          src={heroSlides[currentHero].img}
-          alt={heroSlides[currentHero].title}
-          className="w-full h-full object-cover animate-fade-in transition-all duration-1000"
-        />
+    <div className="bg-emerald-950 relative overflow-hidden pt-[72px]">
+      {/* Thematic Background */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity"
+        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80')` }}
+      />
+      {/* Gradient overlay */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-emerald-950/80 via-green-900/80 to-black/95" />
 
-        {/* Navigation Buttons */}
-        <button
-          onClick={() => handleManualHeroNav('prev')}
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-        >
-          <ChevronLeft size={32} />
-        </button>
+      <div className="relative z-10">
+      {/* ── Hero Slider Card ── */}
+      <div className="mx-6 mt-4 rounded-[2rem] overflow-hidden relative h-[360px] group shadow-2xl bg-emerald-950">
 
-        <button
-          onClick={() => handleManualHeroNav('next')}
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-        >
-          <ChevronRight size={32} />
-        </button>
+        {/* Slide images — stacked, cross-fade via opacity */}
+        {heroSlides.map((slide, i) => (
+          <div
+            key={i}
+            className="absolute inset-0 transition-opacity duration-1000"
+            style={{ opacity: i === currentHero ? 1 : 0, zIndex: i === currentHero ? 1 : 0 }}
+          >
+            {/* Full image — no zoom, fully visible */}
+            <img
+              src={slide.img}
+              alt={slide.title || `slide-${i}`}
+              className="w-full h-full object-contain object-center"
+            />
+            {/* Watermark cover: hides the top-right badge on img2 */}
+            {!slide.hasContent && (
+              <div className="absolute top-0 right-0 w-32 h-10 bg-emerald-950" />
+            )}
+            {/* Dark gradient only on the content slide */}
+            {slide.hasContent && (
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+            )}
+          </div>
+        ))}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 flex flex-col items-center justify-center text-white text-center px-4">
-          {/* Hero Content without Blur Card */}
-          <div className="max-w-5xl relative z-10 animate-fade-in">
-            <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter">
-              {heroSlides[currentHero].title}
-            </h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto font-medium mb-10 text-white/90 leading-relaxed">
-              {heroSlides[currentHero].text}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-5 justify-center mt-4">
-              <button
-                onClick={onViewServices}
-                className="bg-emerald-500 text-white px-10 py-4 rounded-full font-black text-lg shadow-xl hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+        {/* ── Slide content — only shown on slide 0 ── */}
+        {heroSlides[currentHero].hasContent && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white text-center px-6">
+            <div className="max-w-5xl">
+              {/* Badge */}
+              <span
+                key={`badge-${currentHero}`}
+                className="inline-block mb-6 bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-300 text-xs font-black uppercase tracking-[0.25em] px-5 py-2 rounded-full"
+                style={{ animation: 'slideUp 0.6s ease forwards' }}
               >
-                Explore Services →
-              </button>
+                {heroSlides[currentHero].badge}
+              </span>
 
-              <button
-                onClick={updateMyLocation}
-                className="bg-white/10 border border-white/20 text-white px-10 py-4 rounded-full font-black text-lg shadow-xl hover:bg-white/20 transition-all uppercase tracking-widest flex items-center gap-2"
+              <h1
+                key={`title-${currentHero}`}
+                className="text-5xl md:text-7xl font-black mb-6 tracking-tighter leading-none drop-shadow-2xl"
+                style={{ animation: 'slideUp 0.7s 0.1s ease both' }}
               >
-                {updatingLocation ? "Updating..." : "📍 My Location"}
-              </button>
+                {heroSlides[currentHero].title}
+              </h1>
+              <p
+                key={`text-${currentHero}`}
+                className="text-xl md:text-2xl max-w-3xl mx-auto font-medium mb-10 text-white/85 leading-relaxed drop-shadow-lg"
+                style={{ animation: 'slideUp 0.7s 0.2s ease both' }}
+              >
+                {heroSlides[currentHero].text}
+              </p>
+
+              <div
+                key={`btns-${currentHero}`}
+                className="flex flex-col sm:flex-row gap-5 justify-center"
+                style={{ animation: 'slideUp 0.7s 0.3s ease both' }}
+              >
+                <button
+                  onClick={onViewServices}
+                  className="bg-emerald-500 text-white px-10 py-4 rounded-full font-black text-lg shadow-xl hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+                >
+                  Explore Services →
+                </button>
+                <button
+                  onClick={updateMyLocation}
+                  className="bg-white/10 border border-white/30 backdrop-blur-md text-white px-10 py-4 rounded-full font-black text-lg shadow-xl hover:bg-white/20 transition-all uppercase tracking-widest flex items-center gap-2"
+                >
+                  {updatingLocation ? 'Updating…' : '📍 My Location'}
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Progress dots */}
-          <div className="flex gap-3 mt-12">
+        {/* ── Prev / Next Arrows ── */}
+        <button
+          onClick={() => handleManualHeroNav('prev')}
+          className="absolute left-5 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/20 hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronLeft size={28} />
+        </button>
+        <button
+          onClick={() => handleManualHeroNav('next')}
+          className="absolute right-5 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/20 hover:bg-black/40 transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronRight size={28} />
+        </button>
+
+        {/* ── Dot indicators + animated progress bar ── */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4">
+          <div className="flex gap-3">
             {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => { setCurrentHero(i); resetHeroTimer(); }}
-                className={`h-2 rounded-full transition-all ${i === currentHero ? 'bg-emerald-400 w-16 shadow-[0_0_15px_rgba(52,211,153,0.6)]' : 'bg-white/20 w-8 hover:bg-white/40'}`}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === currentHero
+                    ? 'bg-emerald-400 w-14 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+                    : 'bg-white/30 w-6 hover:bg-white/60'
+                }`}
               />
             ))}
           </div>
+          {/* Thin progress bar that fills over SLIDE_DURATION */}
+          <div className="w-40 h-0.5 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-400 rounded-full transition-none"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Keyframe animations injected inline */}
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       {/* Services Grid Section */}
       <section className="py-20 bg-transparent">
@@ -400,7 +493,7 @@ const DashboardHome = ({ userName, onViewServices }) => {
       < section className="py-20" >
         <div className="container mx-auto px-6">
           {/* Header Text wrapped in glassmorphism card */}
-          <div className="relative mb-20 bg-white/10 backdrop-blur-2xl border border-white/20 p-12 rounded-[4rem] shadow-2xl relative z-10 overflow-hidden group">
+          <div className="relative mb-20 bg-white/10 backdrop-blur-2xl border border-white/20 p-12 rounded-[4rem] shadow-2xl z-10 overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
             
             <div className="text-center relative z-10 animate-fade-in">
@@ -477,6 +570,7 @@ const DashboardHome = ({ userName, onViewServices }) => {
           </div>
         </div>
       </section >
+      </div>
     </div >
   );
 };

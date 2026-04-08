@@ -180,60 +180,61 @@ const ProviderHome = ({ userName }) => {
                         {serviceCategories.map((service, idx) => {
                             const isSolar = service.title === "Solar Panel Installation";
                             return (
-                            <div
-                                key={service.id}
-                                onClick={() => isSolar ? null : navigate('/provider/services')}
-                                className={`group bg-white rounded-[2rem] overflow-hidden ${isSolar ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-1'} shadow-md transition-all duration-500 border border-slate-100 flex flex-col`}
-                            >
-                                {/* Card Header with Image */}
-                                <div className="h-48 overflow-hidden relative">
-                                    <img
-                                        src={service.img}
-                                        alt={service.title}
-                                        className={`w-full h-full object-cover transition-transform duration-700 ${isSolar ? 'blur-[1px] grayscale' : 'group-hover:scale-110'}`}
-                                    />
-                                    {!isSolar && <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300"></div>}
-                                    {isSolar && (
-                                        <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10">
-                                            Coming Soon
-                                        </div>
-                                    )}
-                                    {isSolar && (
-                                        <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-10">
-                                            <span className="text-black text-lg font-bold tracking-wide px-4 py-2 bg-yellow-400/90 rounded-full border border-yellow-500">🔒 Coming Soon</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content Overlay */}
-                                <div className="p-6 flex-grow flex flex-col">
-                                    <h4 className="text-xl font-bold text-black mb-3 group-hover:text-green-600 transition-colors">
-                                        {service.title}
-                                    </h4>
-
-                                    <p className="text-black text-xs leading-relaxed line-clamp-2 mb-6">
-                                        {service.desc}
-                                    </p>
-
-                                    <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-                                        {isSolar ? (
-                                            <span className="text-slate-400 text-xs font-black uppercase tracking-wider">
-                                                Not available
-                                            </span>
-                                        ) : (
-                                            <>
-                                                <span className="text-green-600 text-xs font-black uppercase tracking-wider">
-                                                    Setup Now
-                                                </span>
-                                                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all">
-                                                    <ChevronRight size={16} />
-                                                </div>
-                                            </>
+                                <div
+                                    key={service.id}
+                                    onClick={() => isSolar ? null : navigate('/provider/services')}
+                                    className={`group bg-white rounded-[2rem] overflow-hidden ${isSolar ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-1'} shadow-md transition-all duration-500 border border-slate-100 flex flex-col`}
+                                >
+                                    {/* Card Header with Image */}
+                                    <div className="h-48 overflow-hidden relative">
+                                        <img
+                                            src={service.img}
+                                            alt={service.title}
+                                            className={`w-full h-full object-cover transition-transform duration-700 ${isSolar ? 'blur-[1px] grayscale' : 'group-hover:scale-110'}`}
+                                        />
+                                        {!isSolar && <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-300"></div>}
+                                        {isSolar && (
+                                            <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10">
+                                                Coming Soon
+                                            </div>
+                                        )}
+                                        {isSolar && (
+                                            <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-10">
+                                                <span className="text-black text-lg font-bold tracking-wide px-4 py-2 bg-yellow-400/90 rounded-full border border-yellow-500">🔒 Coming Soon</span>
+                                            </div>
                                         )}
                                     </div>
+
+                                    {/* Content Overlay */}
+                                    <div className="p-6 flex-grow flex flex-col">
+                                        <h4 className="text-xl font-bold text-black mb-3 group-hover:text-green-600 transition-colors">
+                                            {service.title}
+                                        </h4>
+
+                                        <p className="text-black text-xs leading-relaxed line-clamp-2 mb-6">
+                                            {service.desc}
+                                        </p>
+
+                                        <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                                            {isSolar ? (
+                                                <span className="text-slate-400 text-xs font-black uppercase tracking-wider">
+                                                    Not available
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <span className="text-green-600 text-xs font-black uppercase tracking-wider">
+                                                        Setup Now
+                                                    </span>
+                                                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all">
+                                                        <ChevronRight size={16} />
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )})}
+                            )
+                        })}
                     </div>
 
                     <div className="mt-16 text-center">

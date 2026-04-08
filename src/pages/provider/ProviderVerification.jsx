@@ -139,8 +139,8 @@ function StepBadge({ step, currentStep, label, completed }) {
         active
           ? "border-emerald-400/40 bg-emerald-500/15"
           : completed
-          ? "border-white/20 bg-white/10"
-          : "border-white/10 bg-white/5"
+            ? "border-white/20 bg-white/10"
+            : "border-white/10 bg-white/5"
       )}
     >
       <div className="flex items-center gap-3">
@@ -150,8 +150,8 @@ function StepBadge({ step, currentStep, label, completed }) {
             active
               ? "bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg"
               : completed
-              ? "bg-white/20 text-emerald-200"
-              : "bg-white/10 text-white/70"
+                ? "bg-white/20 text-emerald-200"
+                : "bg-white/10 text-white/70"
           )}
         >
           {completed ? <CheckCircle2 size={18} /> : step}
@@ -400,7 +400,7 @@ export default function ProviderVerification() {
           ...prev,
           aadhaar_name: normalizeValue(profData.aadhaar_name),
           contact_phone: normalizeValue(
-            profData.contact_phone || profData.phone_number
+            profData.contact_phone || profData.contact_phone
           ),
           permanent_address: normalizeValue(profData.permanent_address),
           landmark: normalizeValue(profData.landmark),
@@ -435,7 +435,7 @@ export default function ProviderVerification() {
           !!profData.aadhar_number ||
           !!profData.pan_number ||
           !!profData.contact_phone ||
-          !!profData.phone_number;
+          !!profData.contact_phone;
 
         const hasStep2Data =
           !!profData.rpc_number ||
@@ -520,7 +520,7 @@ export default function ProviderVerification() {
 
   const validateStep1 = useCallback(() => {
     if (!formData.aadhaar_name.trim()) {
-     toast.error("Aadhaar name is required");
+      toast.error("Aadhaar name is required");
       return false;
     }
 
@@ -651,17 +651,17 @@ export default function ProviderVerification() {
       const { error } = await supabase
         .from("providers")
         .update({
-  aadhaar_name: formData.aadhaar_name.trim(),   // ✅ NEW LINE
+          aadhaar_name: formData.aadhaar_name.trim(),   // ✅ NEW LINE
 
-  contact_phone: formData.contact_phone.trim(),
-  permanent_address: formData.permanent_address.trim() || null,
-  landmark: formData.landmark.trim() || null,
-  aadhar_number: formData.aadhar_number.trim(),
-  aadhar_url: aadharProofUrl,
-  pan_number: formData.pan_number.trim(),
-  pan_url: panProofUrl,
-  profile_photo_url: profilePhotoUrl
-})
+          contact_phone: formData.contact_phone.trim(),
+          permanent_address: formData.permanent_address.trim() || null,
+          landmark: formData.landmark.trim() || null,
+          aadhar_number: formData.aadhar_number.trim(),
+          aadhar_url: aadharProofUrl,
+          pan_number: formData.pan_number.trim(),
+          pan_url: panProofUrl,
+          profile_photo_url: profilePhotoUrl
+        })
         .eq("id", providerId);
 
       if (error) throw error;
@@ -734,26 +734,26 @@ export default function ProviderVerification() {
 
         const droneRegUrl = drone.drone_reg_proof
           ? await uploadFile(
-              drone.drone_reg_proof,
-              "drone-reg-proofs",
-              `drone-reg-${i + 1}`
-            )
+            drone.drone_reg_proof,
+            "drone-reg-proofs",
+            `drone-reg-${i + 1}`
+          )
           : drone.existing_drone_reg_url || null;
 
         const dronePhotoUrl = drone.drone_photo
           ? await uploadFile(
-              drone.drone_photo,
-              "drone-photos",
-              `drone-photo-${i + 1}`
-            )
+            drone.drone_photo,
+            "drone-photos",
+            `drone-photo-${i + 1}`
+          )
           : drone.existing_drone_photo_url || null;
 
         const insuranceUrl = drone.insurance_proof
           ? await uploadFile(
-              drone.insurance_proof,
-              "insurance-proofs",
-              `insurance-${i + 1}`
-            )
+            drone.insurance_proof,
+            "insurance-proofs",
+            `insurance-${i + 1}`
+          )
           : drone.existing_insurance_url || null;
 
         droneRows.push({
@@ -771,7 +771,7 @@ export default function ProviderVerification() {
             : null,
           acres_sprayed:
             drone.primary_usage === "Agriculture Spraying" &&
-            drone.acres_sprayed
+              drone.acres_sprayed
               ? Number(drone.acres_sprayed)
               : null,
           insurance_company: drone.insurance_company || null,
@@ -986,10 +986,10 @@ export default function ProviderVerification() {
                     hint="This name comes from your provider profile and cannot be changed here."
                   >
                     <Input
-  placeholder="Enter name as per Aadhaar"
-  value={formData.aadhaar_name}
-  onChange={(e) => updateFormData("aadhaar_name", e.target.value)}
-/>
+                      placeholder="Enter name as per Aadhaar"
+                      value={formData.aadhaar_name}
+                      onChange={(e) => updateFormData("aadhaar_name", e.target.value)}
+                    />
                   </Field>
 
                   <Field label="Contact Number" required>

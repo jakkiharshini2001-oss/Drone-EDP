@@ -535,8 +535,8 @@ const AddressModal = ({ onClose, onSelect, farmerId }) => {
                 {capturingGPS
                   ? "Capturing GPS..."
                   : resolvingAddress
-                  ? "Resolving Address..."
-                  : "📡 Capture GPS Location"}
+                    ? "Resolving Address..."
+                    : "📡 Capture GPS Location"}
               </button>
 
               <input
@@ -1102,8 +1102,8 @@ const BookingForm = ({ bookingData, onBack }) => {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
@@ -1208,7 +1208,7 @@ const BookingForm = ({ bookingData, onBack }) => {
             address_line: selectedLocation.address_name,
             landmark: details.landmark,
 
-            contact_phone: farmerPhone,
+            phone_number: farmerPhone,
 
             beneficiary_name: bookForOthers ? beneficiaryName.trim() : null,
             beneficiary_phone: bookForOthers ? beneficiaryPhone.trim() : null,
@@ -1625,14 +1625,12 @@ const BookingForm = ({ bookingData, onBack }) => {
                           setBeneficiaryName("");
                           setBeneficiaryPhone("");
                         }}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                          bookForOthers ? "bg-green-500" : "bg-gray-300"
-                        }`}
+                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none ${bookForOthers ? "bg-green-500" : "bg-gray-300"
+                          }`}
                       >
                         <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                            bookForOthers ? "translate-x-8" : "translate-x-1"
-                          }`}
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ${bookForOthers ? "translate-x-8" : "translate-x-1"
+                            }`}
                         />
                       </button>
                     </div>
@@ -1789,11 +1787,10 @@ const BookingForm = ({ bookingData, onBack }) => {
                             onClick={() =>
                               setDetails({ ...details, selectedTime: slot })
                             }
-                            className={`p-3 rounded-lg text-center cursor-pointer text-sm transition-colors ${
-                              isSelected
+                            className={`p-3 rounded-lg text-center cursor-pointer text-sm transition-colors ${isSelected
                                 ? "bg-green-600 text-white"
                                 : "bg-gray-100 hover:bg-green-100 text-black"
-                            }`}
+                              }`}
                           >
                             {slot}
                           </div>
@@ -1807,18 +1804,16 @@ const BookingForm = ({ bookingData, onBack }) => {
 
                     <div
                       onClick={() => setPaymentMethod("CASH_ON_SERVICE")}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                        paymentMethod === "CASH_ON_SERVICE"
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "CASH_ON_SERVICE"
                           ? "border-emerald-300 bg-white"
                           : "border-white/10 bg-white/5 hover:border-white/40"
-                      }`}
+                        }`}
                     >
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          paymentMethod === "CASH_ON_SERVICE"
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === "CASH_ON_SERVICE"
                             ? "border-green-500"
                             : "border-gray-300"
-                        }`}
+                          }`}
                       >
                         {paymentMethod === "CASH_ON_SERVICE" && (
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
@@ -1827,20 +1822,18 @@ const BookingForm = ({ bookingData, onBack }) => {
 
                       <div className="flex-1">
                         <p
-                          className={`font-bold text-sm ${
-                            paymentMethod === "CASH_ON_SERVICE"
+                          className={`font-bold text-sm ${paymentMethod === "CASH_ON_SERVICE"
                               ? "text-emerald-900"
                               : "text-white"
-                          }`}
+                            }`}
                         >
                           💵 Cash on Service
                         </p>
                         <p
-                          className={`text-xs mt-0.5 ${
-                            paymentMethod === "CASH_ON_SERVICE"
+                          className={`text-xs mt-0.5 ${paymentMethod === "CASH_ON_SERVICE"
                               ? "text-emerald-800"
                               : "text-emerald-100/70"
-                          }`}
+                            }`}
                         >
                           Pay the operator directly after the service is completed
                         </p>

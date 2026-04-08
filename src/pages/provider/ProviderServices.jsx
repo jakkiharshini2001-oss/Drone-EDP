@@ -19,6 +19,7 @@ const emptyFormState = {
 };
 
 const emptyDroneState = {
+  id: null,
   drone_brand: "",
   drone_model: "",
   drone_category: "",
@@ -35,6 +36,8 @@ const emptyDroneState = {
   drone_experience: "",
   acres_sprayed: "",
   insurance_url: "",
+  verification_status: "pending",
+  is_active: true,
 };
 
 const emptyPendingFiles = {
@@ -101,13 +104,13 @@ function normalizeDateForInput(value) {
 export default function ProviderServices() {
   const navigate = useNavigate();
 
-  const [services, setServices] = useState([]);
+  const [drones, setDrones] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
-  const [editingService, setEditingService] = useState(null);
+  const [editingDrone, setEditingDrone] = useState(null);
 
   const [formData, setFormData] = useState(emptyFormState);
   const [droneData, setDroneData] = useState(emptyDroneState);
@@ -124,18 +127,21 @@ export default function ProviderServices() {
     fetchData();
   }, []);
 
-  // ── Realtime: auto-refetch when services change ──────────────────────────
   useEffect(() => {
     const channel = supabase
-      .channel("provider-services-realtime")
+      .channel("provider-drones-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "provider_services" },
-        () => { fetchData(); }
+        { event: "*", schema: "public", table: "provider_drones" },
+        () => {
+          fetchData();
+        }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchData() {
@@ -147,41 +153,45 @@ export default function ProviderServices() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setServices([]);
+        setDrones([]);
         setCategories([]);
         return;
       }
 
-      const [catRes, svcRes] = await Promise.all([
+      const [catRes, droneRes] = await Promise.all([
         supabase
           .from("service_categories")
           .select("id, name")
           .order("name", { ascending: true }),
 
         supabase
-          .from("provider_services")
-          .select(`
-            id,
-            provider_id,
-            category_id,
-            package_name,
-            verification_status,
-            is_active,
-            created_at,
-            service_categories(name)
-          `)
+          .from("provider_drones")
+          .select("*")
           .eq("provider_id", user.id)
           .order("created_at", { ascending: false }),
       ]);
 
       if (catRes.error) throw catRes.error;
-      if (svcRes.error) throw svcRes.error;
+      if (droneRes.error) throw droneRes.error;
 
-      setCategories(catRes.data || []);
-      setServices(svcRes.data || []);
+      const categoriesData = catRes.data || [];
+      const dronesData = droneRes.data || [];
+
+      const categoryMap = new Map(
+        categoriesData.map((cat) => [String(cat.id), cat])
+      );
+
+      const mappedDrones = dronesData.map((drone) => ({
+        ...drone,
+        service_categories:
+          categoryMap.get(String(drone.category_id || drone.service_id)) || null,
+      }));
+
+      setCategories(categoriesData);
+      setDrones(mappedDrones);
     } catch (err) {
       console.error("fetchData error:", err);
-      toast.error(err?.message || "Failed to load services");
+      toast.error(err?.message || "Failed to load drone services");
     } finally {
       setLoading(false);
     }
@@ -189,11 +199,19 @@ export default function ProviderServices() {
 
   function resetForm() {
     setShowForm(false);
-    setEditingService(null);
+    setEditingDrone(null);
     setFormData(emptyFormState);
     setDroneData(emptyDroneState);
     setPendingFiles(emptyPendingFiles);
     setSubmitting(false);
+  }
+
+  function openAddForm() {
+    setEditingDrone(null);
+    setFormData(emptyFormState);
+    setDroneData(emptyDroneState);
+    setPendingFiles(emptyPendingFiles);
+    setShowForm(true);
   }
 
   function handleFileSelect(e, field) {
@@ -222,49 +240,19 @@ export default function ProviderServices() {
       if (!user) throw new Error("Not authenticated");
       if (!formData.categoryId) throw new Error("Please select service category");
 
-      if (showDroneFields) {
-        if (!droneData.drone_brand.trim()) {
-          throw new Error("Please enter drone brand");
-        }
-        if (!droneData.drone_model.trim()) {
-          throw new Error("Please enter drone model");
-        }
+      if (!droneData.drone_brand.trim()) {
+        throw new Error("Please enter drone brand");
       }
 
-      let serviceId = editingService?.id || null;
-
-      const servicePayload = {
-        provider_id: user.id,
-        category_id: formData.categoryId,
-        package_name: formData.categoryName || "Drone Service",
-        verification_status: editingService?.verification_status || "pending",
-        is_active: true,
-      };
-
-      if (editingService) {
-        const { error } = await supabase
-          .from("provider_services")
-          .update(servicePayload)
-          .eq("id", editingService.id);
-
-        if (error) throw error;
-        serviceId = editingService.id;
-      } else {
-        const { data, error } = await supabase
-          .from("provider_services")
-          .insert(servicePayload)
-          .select("id")
-          .single();
-
-        if (error) throw error;
-        serviceId = data.id;
+      if (!droneData.drone_model.trim()) {
+        throw new Error("Please enter drone model");
       }
 
       let finalDroneRegUrl = droneData.drone_reg_url || null;
       let finalDronePhotoUrl = droneData.drone_photo_url || null;
       let finalInsuranceUrl = droneData.insurance_url || null;
 
-      if (showDroneFields && pendingFiles.drone_reg_url) {
+      if (pendingFiles.drone_reg_url) {
         finalDroneRegUrl = await uploadFile(
           pendingFiles.drone_reg_url,
           FOLDER_MAP.drone_reg_url,
@@ -272,7 +260,7 @@ export default function ProviderServices() {
         );
       }
 
-      if (showDroneFields && pendingFiles.drone_photo_url) {
+      if (pendingFiles.drone_photo_url) {
         finalDronePhotoUrl = await uploadFile(
           pendingFiles.drone_photo_url,
           FOLDER_MAP.drone_photo_url,
@@ -280,7 +268,7 @@ export default function ProviderServices() {
         );
       }
 
-      if (showDroneFields && pendingFiles.insurance_url) {
+      if (pendingFiles.insurance_url) {
         finalInsuranceUrl = await uploadFile(
           pendingFiles.insurance_url,
           FOLDER_MAP.insurance_url,
@@ -288,58 +276,49 @@ export default function ProviderServices() {
         );
       }
 
-      if (showDroneFields && serviceId) {
-        const dronePayload = {
-          provider_id: user.id,
-          service_id: serviceId,
-          drone_brand: droneData.drone_brand.trim() || null,
-          drone_model: droneData.drone_model.trim() || null,
-          drone_category: droneData.drone_category || null,
-          drone_uin: droneData.drone_uin.trim() || null,
-          tank_capacity: droneData.tank_capacity.trim() || null,
-          battery_sets: toNullableInt(droneData.battery_sets),
-          battery_capacity: droneData.battery_capacity.trim() || null,
-          primary_usage: droneData.primary_usage || null,
-          insurance_company: droneData.insurance_company.trim() || null,
-          insurance_policy_number:
-            droneData.insurance_policy_number.trim() || null,
-          insurance_expiry:
-            normalizeDateForInput(droneData.insurance_expiry) || null,
-          drone_reg_url: finalDroneRegUrl,
-          drone_photo_url: finalDronePhotoUrl,
-          drone_experience: toNullableFloat(droneData.drone_experience),
-          acres_sprayed: toNullableFloat(droneData.acres_sprayed),
-          insurance_url: finalInsuranceUrl,
-        };
+      const payload = {
+        provider_id: user.id,
 
-        const { data: existingRows, error: existingError } = await supabase
+        // keep category in service_id because your table currently has service_id
+        service_id: formData.categoryId,
+
+        drone_brand: droneData.drone_brand.trim() || null,
+        drone_model: droneData.drone_model.trim() || null,
+        drone_category: droneData.drone_category || null,
+        drone_uin: droneData.drone_uin.trim() || null,
+        tank_capacity: droneData.tank_capacity.trim() || null,
+        battery_sets: toNullableInt(droneData.battery_sets),
+        battery_capacity: droneData.battery_capacity.trim() || null,
+        primary_usage: droneData.primary_usage || null,
+        insurance_company: droneData.insurance_company.trim() || null,
+        insurance_policy_number:
+          droneData.insurance_policy_number.trim() || null,
+        insurance_expiry:
+          normalizeDateForInput(droneData.insurance_expiry) || null,
+        drone_reg_url: finalDroneRegUrl,
+        drone_photo_url: finalDronePhotoUrl,
+        drone_experience: toNullableFloat(droneData.drone_experience),
+        acres_sprayed: toNullableFloat(droneData.acres_sprayed),
+        insurance_url: finalInsuranceUrl,
+      };
+
+      if (editingDrone?.id) {
+        const { error } = await supabase
           .from("provider_drones")
-          .select("id, created_at")
-          .eq("service_id", serviceId)
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .update(payload)
+          .eq("id", editingDrone.id)
+          .eq("provider_id", user.id);
 
-        if (existingError) throw existingError;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("provider_drones")
+          .insert(payload);
 
-        const existingDrone = existingRows?.[0] || null;
-
-        if (existingDrone?.id) {
-          const { error: updateDroneError } = await supabase
-            .from("provider_drones")
-            .update(dronePayload)
-            .eq("id", existingDrone.id);
-
-          if (updateDroneError) throw updateDroneError;
-        } else {
-          const { error: insertDroneError } = await supabase
-            .from("provider_drones")
-            .insert(dronePayload);
-
-          if (insertDroneError) throw insertDroneError;
-        }
+        if (error) throw error;
       }
 
-      toast.success(editingService ? "Service updated" : "Service submitted");
+      toast.success(editingDrone ? "Drone updated" : "Drone added");
       resetForm();
       await fetchData();
     } catch (err) {
@@ -350,79 +329,79 @@ export default function ProviderServices() {
     }
   }
 
-  async function handleEdit(service) {
+  function handleEdit(drone) {
     try {
-      setEditingService(service);
+      setEditingDrone(drone);
+
+      const selectedCategoryId = drone.category_id || drone.service_id || "";
+      const selectedCategory =
+        categories.find((c) => String(c.id) === String(selectedCategoryId)) ||
+        null;
 
       setFormData({
-        categoryId: service.category_id || "",
-        categoryName: service.service_categories?.name || "",
+        categoryId: selectedCategoryId,
+        categoryName: selectedCategory?.name || "",
       });
 
-      if (isDroneCat(service.service_categories?.name)) {
-        const { data: droneRows, error } = await supabase
-          .from("provider_drones")
-          .select("*")
-          .eq("service_id", service.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (error) throw error;
-
-        const drone = droneRows?.[0] || null;
-
-        if (drone) {
-          setDroneData({
-            drone_brand: drone.drone_brand || "",
-            drone_model: drone.drone_model || "",
-            drone_category: drone.drone_category || "",
-            drone_uin: drone.drone_uin || "",
-            tank_capacity: drone.tank_capacity || "",
-            battery_sets:
-              drone.battery_sets != null ? String(drone.battery_sets) : "",
-            battery_capacity: drone.battery_capacity || "",
-            primary_usage: drone.primary_usage || "",
-            insurance_company: drone.insurance_company || "",
-            insurance_policy_number: drone.insurance_policy_number || "",
-            insurance_expiry: normalizeDateForInput(drone.insurance_expiry),
-            drone_reg_url: drone.drone_reg_url || "",
-            drone_photo_url: drone.drone_photo_url || "",
-            drone_experience:
-              drone.drone_experience != null
-                ? String(drone.drone_experience)
-                : "",
-            acres_sprayed:
-              drone.acres_sprayed != null ? String(drone.acres_sprayed) : "",
-            insurance_url: drone.insurance_url || "",
-          });
-        } else {
-          setDroneData(emptyDroneState);
-        }
-      } else {
-        setDroneData(emptyDroneState);
-      }
+      setDroneData({
+        id: drone.id || null,
+        drone_brand: drone.drone_brand || "",
+        drone_model: drone.drone_model || "",
+        drone_category: drone.drone_category || "",
+        drone_uin: drone.drone_uin || "",
+        tank_capacity: drone.tank_capacity || "",
+        battery_sets:
+          drone.battery_sets !== null && drone.battery_sets !== undefined
+            ? String(drone.battery_sets)
+            : "",
+        battery_capacity: drone.battery_capacity || "",
+        primary_usage: drone.primary_usage || "",
+        insurance_company: drone.insurance_company || "",
+        insurance_policy_number: drone.insurance_policy_number || "",
+        insurance_expiry: normalizeDateForInput(drone.insurance_expiry),
+        drone_reg_url: drone.drone_reg_url || "",
+        drone_photo_url: drone.drone_photo_url || "",
+        drone_experience:
+          drone.drone_experience !== null && drone.drone_experience !== undefined
+            ? String(drone.drone_experience)
+            : "",
+        acres_sprayed:
+          drone.acres_sprayed !== null && drone.acres_sprayed !== undefined
+            ? String(drone.acres_sprayed)
+            : "",
+        insurance_url: drone.insurance_url || "",
+        verification_status: drone.verification_status || "pending",
+        is_active: drone.is_active ?? true,
+      });
 
       setPendingFiles(emptyPendingFiles);
       setShowForm(true);
     } catch (err) {
       console.error("handleEdit error:", err);
-      toast.error(err?.message || "Failed to load service details");
+      toast.error(err?.message || "Failed to load drone details");
     }
   }
 
   async function handleDelete(id) {
-    const ok = window.confirm("Are you sure you want to delete this service?");
+    const ok = window.confirm("Are you sure you want to delete this drone?");
     if (!ok) return;
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Not authenticated");
+
       const { error } = await supabase
-        .from("provider_services")
+        .from("provider_drones")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("provider_id", user.id);
 
       if (error) throw error;
 
-      toast.success("Service deleted");
+      toast.success("Drone deleted");
       await fetchData();
     } catch (err) {
       console.error("handleDelete error:", err);
@@ -430,10 +409,12 @@ export default function ProviderServices() {
     }
   }
 
-  const filteredServices =
+  const filteredCategories = categories.filter((c) => isDroneCat(c.name));
+
+  const filteredDrones =
     activeCategory === "ALL"
-      ? services
-      : services.filter((s) => s.service_categories?.name === activeCategory);
+      ? drones
+      : drones.filter((d) => d.service_categories?.name === activeCategory);
 
   const inputClass =
     "w-full border border-gray-200 p-3 rounded-xl bg-white focus:outline-none focus:border-green-400 text-sm";
@@ -456,8 +437,8 @@ export default function ProviderServices() {
           {pendingFile
             ? `${pendingFile.name} selected`
             : currentUrl
-            ? "Replace file"
-            : "Choose file"}
+              ? "Replace file"
+              : "Choose file"}
         </span>
 
         <input
@@ -498,33 +479,30 @@ export default function ProviderServices() {
             >
               <ArrowLeft size={16} /> Back
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">My Services</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              My Drone Services
+            </h1>
           </div>
 
           <button
             type="button"
-            onClick={() => {
-              setEditingService(null);
-              setFormData(emptyFormState);
-              setDroneData(emptyDroneState);
-              setPendingFiles(emptyPendingFiles);
-              setShowForm(true);
-            }}
+            onClick={openAddForm}
             className="bg-black text-white px-6 py-3 rounded-xl"
           >
-            + Add Service
+            + Add Drone
           </button>
         </div>
 
         <div className="max-w-7xl mx-auto mb-8 flex gap-3 flex-wrap">
-          {["ALL", ...categories.map((c) => c.name)].map((cat) => (
+          {["ALL", ...filteredCategories.map((c) => c.name)].map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm ${
-                activeCategory === cat ? "bg-black text-white" : "bg-white border"
-              }`}
+              className={`px-4 py-2 rounded-full text-sm ${activeCategory === cat
+                  ? "bg-black text-white"
+                  : "bg-white border"
+                }`}
             >
               {cat}
             </button>
@@ -534,7 +512,7 @@ export default function ProviderServices() {
         {showForm && (
           <div className="max-w-3xl mx-auto bg-white rounded-2xl p-8 mb-12 shadow-sm border">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {editingService ? "Edit Service" : "Add New Service"}
+              {editingDrone ? "Edit Drone Service" : "Add New Drone Service"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -555,7 +533,7 @@ export default function ProviderServices() {
                   className={inputClass}
                 >
                   <option value="">Select Category</option>
-                  {categories.map((c) => (
+                  {filteredCategories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -839,9 +817,9 @@ export default function ProviderServices() {
                 >
                   {submitting
                     ? "Submitting..."
-                    : editingService
-                    ? "Update Service"
-                    : "Submit Service"}
+                    : editingDrone
+                      ? "Update Drone"
+                      : "Submit Drone"}
                 </button>
               </div>
             </form>
@@ -851,49 +829,55 @@ export default function ProviderServices() {
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="text-center py-20 text-gray-400">
-              Loading services...
+              Loading drone services...
             </div>
-          ) : filteredServices.length === 0 ? (
+          ) : filteredDrones.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               <p className="text-4xl mb-3">🚁</p>
-              <p className="font-semibold">No services added yet</p>
+              <p className="font-semibold">No drone services added yet</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {filteredServices.map((s) => (
+              {filteredDrones.map((d) => (
                 <div
-                  key={s.id}
+                  key={d.id}
                   className="bg-white rounded-2xl shadow hover:shadow-lg transition"
                 >
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-3">
                       <h3 className="font-semibold text-lg">
-                        {s.service_categories?.name || s.package_name}
+                        {d.drone_brand || "Drone"} {d.drone_model || ""}
                       </h3>
-                      {isDroneCat(s.service_categories?.name) && (
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                          🚁 Drone
-                        </span>
-                      )}
+
+                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                        {d.service_categories?.name || "Drone Service"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-sm text-gray-600 mb-4">
+                      <p>
+                        <span className="font-medium">UIN:</span>{" "}
+                        {d.drone_uin || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Usage:</span>{" "}
+                        {d.primary_usage || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Tank:</span>{" "}
+                        {d.tank_capacity || "-"}
+                      </p>
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          s.verification_status === "approved"
-                            ? "bg-green-100 text-green-600"
-                            : s.verification_status === "rejected"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-yellow-100 text-yellow-600"
-                        }`}
-                      >
-                        {s.verification_status}
+                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-600">
+                        pending
                       </span>
 
                       <div className="flex gap-4">
                         <button
                           type="button"
-                          onClick={() => handleEdit(s)}
+                          onClick={() => handleEdit(d)}
                           className="text-gray-500 hover:text-black"
                         >
                           <Edit3 size={16} />
@@ -901,7 +885,7 @@ export default function ProviderServices() {
 
                         <button
                           type="button"
-                          onClick={() => handleDelete(s.id)}
+                          onClick={() => handleDelete(d.id)}
                           className="text-gray-500 hover:text-red-500"
                         >
                           <Trash2 size={16} />

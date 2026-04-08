@@ -118,7 +118,7 @@ const ProviderBookings = () => {
         if (booking.farmer_id) {
           const { data: farmer } = await supabase
             .from("farmers")
-            .select("full_name, phone_number, mandal_name, district, state")
+            .select("full_name, contact_phone, mandal_name, district, state")
             .eq("id", booking.farmer_id)
             .maybeSingle();
 
@@ -132,7 +132,7 @@ const ProviderBookings = () => {
             farmerPhone =
               booking.beneficiary_phone ||
               booking.contact_phone ||
-              farmer.phone_number ||
+              farmer.contact_phone ||
               "—";
 
             farmerLocation =
@@ -255,17 +255,17 @@ const ProviderBookings = () => {
                     <CheckCircle2 size={14} />
                     Completed Services
                   </div>
- 
+
                   <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-md uppercase tracking-tighter">
                     Completed Jobs
                   </h1>
- 
+
                   <p className="text-emerald-50/80 mt-4 max-w-2xl font-medium text-lg leading-relaxed mix-blend-screen">
                     View completed jobs with the exact acres covered and other
                     important booking details.
                   </p>
                 </div>
- 
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full xl:w-auto xl:min-w-[620px]">
                   <div className="bg-gradient-to-br from-emerald-600/90 to-teal-900/90 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
@@ -275,7 +275,7 @@ const ProviderBookings = () => {
                       {stats.totalJobs}
                     </h3>
                   </div>
- 
+
                   <div className="bg-gradient-to-br from-emerald-600/90 to-teal-900/90 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
                       Farmers Served
@@ -284,7 +284,7 @@ const ProviderBookings = () => {
                       {stats.farmersServed}
                     </h3>
                   </div>
- 
+
                   <div className="bg-gradient-to-br from-emerald-600/90 to-teal-900/90 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
                       Total Acres Covered
@@ -314,13 +314,13 @@ const ProviderBookings = () => {
                   className="w-full h-14 rounded-2xl border border-white/10 bg-white/5 pl-14 pr-6 text-sm font-medium text-white placeholder-white/40 outline-none focus:border-emerald-400/50 focus:bg-white/10 focus:ring-4 focus:ring-emerald-400/10 transition-all"
                 />
               </div>
- 
+
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-white/70 shrink-0 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
                   <Filter size={16} />
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Service</span>
                 </div>
- 
+
                 <select
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
@@ -339,117 +339,117 @@ const ProviderBookings = () => {
           {/* Table */}
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-teal-900/20 pointer-events-none"></div>
-            
+
             <div className="relative z-10">
-            {loading ? (
-              <div className="p-16 text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-white/10 animate-pulse mb-4" />
-                <h3 className="text-xl font-bold text-white">
-                  Loading completed jobs...
-                </h3>
-              </div>
-            ) : filteredJobs.length === 0 ? (
-              <div className="p-16 text-center">
-                <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-300">
-                  <Briefcase size={36} />
+              {loading ? (
+                <div className="p-16 text-center">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-white/10 animate-pulse mb-4" />
+                  <h3 className="text-xl font-bold text-white">
+                    Loading completed jobs...
+                  </h3>
                 </div>
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
-                  No completed jobs found
-                </h3>
-                <p className="text-white/60 mt-2 font-medium">
-                  No records match your current filter.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-white/5 border-b border-white/10">
-                    <tr className="text-left text-[10px] uppercase font-black tracking-widest text-emerald-300">
-                      <th className="px-6 py-5">Service</th>
-                      <th className="px-6 py-5">Farmer</th>
-                      <th className="px-6 py-5">Phone</th>
-                      <th className="px-6 py-5">Crop</th>
-                      <th className="px-6 py-5">Acres</th>
-                      <th className="px-6 py-5">Location</th>
-                      <th className="px-6 py-5">Date</th>
-                      <th className="px-6 py-5">Time</th>
-                      <th className="px-6 py-5">Status</th>
-                    </tr>
-                  </thead>
- 
-                  <tbody className="divide-y divide-white/5">
-                    {filteredJobs.map((job, index) => (
-                      <tr
-                        key={job.id}
-                        className="hover:bg-white/5 transition-colors group"
-                      >
-                        <td className="px-6 py-5 font-bold text-white whitespace-nowrap">
-                          {job.service}
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 whitespace-nowrap group-hover:text-white transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-emerald-300">
-                              <User size={14} />
-                            </div>
-                            <span className="font-semibold">{job.farmer_name}</span>
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Phone size={14} className="text-emerald-400" />
-                            {job.phone}
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 whitespace-nowrap">
-                          {job.crop_name}
-                        </td>
- 
-                        <td className="px-6 py-5 text-white font-bold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Layers3 size={14} className="text-emerald-400" />
-                            {job.acres !== "—" ? `${job.acres} acres` : "—"}
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 min-w-[260px]">
-                          <div className="flex items-start gap-2">
-                            <MapPin
-                              size={14}
-                              className="text-emerald-400 mt-0.5 shrink-0"
-                            />
-                            <span className="line-clamp-2">{job.location}</span>
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <CalendarDays size={14} className="text-emerald-400" />
-                            {job.date}
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 text-white/80 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Clock3 size={14} className="text-emerald-400" />
-                            {job.time}
-                          </div>
-                        </td>
- 
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase tracking-widest shadow-inner">
-                            <CheckCircle2 size={12} />
-                            Completed
-                          </span>
-                        </td>
+              ) : filteredJobs.length === 0 ? (
+                <div className="p-16 text-center">
+                  <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-300">
+                    <Briefcase size={36} />
+                  </div>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
+                    No completed jobs found
+                  </h3>
+                  <p className="text-white/60 mt-2 font-medium">
+                    No records match your current filter.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-white/5 border-b border-white/10">
+                      <tr className="text-left text-[10px] uppercase font-black tracking-widest text-emerald-300">
+                        <th className="px-6 py-5">Service</th>
+                        <th className="px-6 py-5">Farmer</th>
+                        <th className="px-6 py-5">Phone</th>
+                        <th className="px-6 py-5">Crop</th>
+                        <th className="px-6 py-5">Acres</th>
+                        <th className="px-6 py-5">Location</th>
+                        <th className="px-6 py-5">Date</th>
+                        <th className="px-6 py-5">Time</th>
+                        <th className="px-6 py-5">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+
+                    <tbody className="divide-y divide-white/5">
+                      {filteredJobs.map((job, index) => (
+                        <tr
+                          key={job.id}
+                          className="hover:bg-white/5 transition-colors group"
+                        >
+                          <td className="px-6 py-5 font-bold text-white whitespace-nowrap">
+                            {job.service}
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 whitespace-nowrap group-hover:text-white transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-emerald-300">
+                                <User size={14} />
+                              </div>
+                              <span className="font-semibold">{job.farmer_name}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Phone size={14} className="text-emerald-400" />
+                              {job.phone}
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 whitespace-nowrap">
+                            {job.crop_name}
+                          </td>
+
+                          <td className="px-6 py-5 text-white font-bold whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Layers3 size={14} className="text-emerald-400" />
+                              {job.acres !== "—" ? `${job.acres} acres` : "—"}
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 min-w-[260px]">
+                            <div className="flex items-start gap-2">
+                              <MapPin
+                                size={14}
+                                className="text-emerald-400 mt-0.5 shrink-0"
+                              />
+                              <span className="line-clamp-2">{job.location}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <CalendarDays size={14} className="text-emerald-400" />
+                              {job.date}
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 text-white/80 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Clock3 size={14} className="text-emerald-400" />
+                              {job.time}
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase tracking-widest shadow-inner">
+                              <CheckCircle2 size={12} />
+                              Completed
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>

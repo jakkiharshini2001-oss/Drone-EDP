@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from "../../lib/supabase";
 import { Clock, CheckCircle, MapPin, Calendar, AlertCircle, XCircle, Eye, Star } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
-import bookingBg from "../../assets/app-bg.png";
+import bookingBg from "../../assets/booking-bg.png";
 
 /* ================================================================
    STAR RATING COMPONENT

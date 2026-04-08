@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext";
+import backgroundImg from "../../assets/background.jpg";
 
 import droneImg from "../../assets/Drone spraying Service.jpeg";
 import solarImg from "../../assets/Solar Panel Installation.png";
@@ -40,19 +41,26 @@ const Services = ({ onSelectService }) => {
   ];
 
   return (
-    <div className="bg-transparent pt-0 min-h-screen relative overflow-hidden">
+    <div className="bg-emerald-950 pt-[72px] min-h-screen relative overflow-hidden">
+      {/* Background image */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity"
+        style={{ backgroundImage: `url('${backgroundImg}')` }}
+      />
+      {/* Emerald gradient overlay */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-emerald-950/80 via-green-900/80 to-black/95" />
 
-      <section className="py-20 max-w-7xl mx-auto px-6 mt-10">
+      <section className="py-20 max-w-7xl mx-auto px-6 mt-10 relative z-10">
 
         {/* Header wrapped in glassmorphism card */}
         <div className="mb-12 bg-white/10 backdrop-blur-2xl border border-white/20 p-10 rounded-[4rem] shadow-2xl relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
           <div className="relative z-10 mb-8">
-            <h2 className="text-black font-black uppercase tracking-[0.3em] text-[10px] mb-4 opacity-80 group-hover:tracking-[0.4em] transition-all duration-700">
+            <h2 className="text-white/60 font-black uppercase tracking-[0.3em] text-[10px] mb-4 opacity-80 group-hover:tracking-[0.4em] transition-all duration-700">
               {t("services.marketplace")}
             </h2>
-            <h3 className="text-4xl md:text-5xl font-black text-black tracking-tighter mb-2">
+            <h3 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">
               {t("services.availableSolutions")}
             </h3>
           </div>

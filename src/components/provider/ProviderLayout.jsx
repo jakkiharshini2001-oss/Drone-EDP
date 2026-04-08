@@ -4,7 +4,7 @@ import { useUI } from "../../context/UIContext";
 import { supabase } from "../../lib/supabase";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Lock } from "lucide-react";
-import providerBg from "../../assets/app-bg.png";
+import providerBg from "../../assets/booking-bg.png";
 
 export default function ProviderLayout({ children }) {
   const {

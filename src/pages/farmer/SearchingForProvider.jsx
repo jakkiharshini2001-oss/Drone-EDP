@@ -9,12 +9,12 @@ const SearchingForProvider = () => {
   const navigate = useNavigate();
 
   /* ================= STATES ================= */
-  const [status,            setStatus]            = useState("searching");
-  const [providerDetails,   setProviderDetails]   = useState(null);
-  const [requestDetails,    setRequestDetails]    = useState(null);
+  const [status, setStatus] = useState("searching");
+  const [providerDetails, setProviderDetails] = useState(null);
+  const [requestDetails, setRequestDetails] = useState(null);
   const [providersNotified, setProvidersNotified] = useState(0);
-  const [farmerLocation,    setFarmerLocation]    = useState(null);
-  const [currentRadius,     setCurrentRadius]     = useState(0);
+  const [farmerLocation, setFarmerLocation] = useState(null);
+  const [currentRadius, setCurrentRadius] = useState(0);
 
   /* ================= FORMAT DATE TIME ================= */
   const formatDateTime = (dateString) => {
@@ -66,9 +66,9 @@ const SearchingForProvider = () => {
           .eq("id", data.farmer_id).single();
         if (farmer) {
           location = {
-            mandal:   farmer.mandal_name,
+            mandal: farmer.mandal_name,
             district: farmer.district,
-            state:    farmer.state
+            state: farmer.state
           };
         }
       }
@@ -152,7 +152,7 @@ const SearchingForProvider = () => {
 
   /* ================= DERIVED ================= */
   const currentStage = getRadiusStage(currentRadius);
-  const isWaiting    = currentStage === -1;
+  const isWaiting = currentStage === -1;
 
   /* ================= UI ================= */
   return (
@@ -258,9 +258,8 @@ const SearchingForProvider = () => {
                           </span>
                         </div>
                         {i < radiusStages.length - 1 && (
-                          <div className={`flex-1 h-1 rounded-full transition-all ${
-                            i < currentStage ? "bg-green-500" : "bg-slate-700"
-                          }`} />
+                          <div className={`flex-1 h-1 rounded-full transition-all ${i < currentStage ? "bg-green-500" : "bg-slate-700"
+                            }`} />
                         )}
                       </React.Fragment>
                     ))}
@@ -273,8 +272,8 @@ const SearchingForProvider = () => {
                           ${i === currentStage
                             ? "bg-green-500/10 border border-green-500/30"
                             : i < currentStage
-                            ? "opacity-50"
-                            : "opacity-30"
+                              ? "opacity-50"
+                              : "opacity-30"
                           }`}>
                         <span className={i <= currentStage ? "text-white font-semibold" : "text-white"}>
                           {i === currentStage ? "🔵 Active" : i < currentStage ? "✅ Done" : "⏳ Next"}

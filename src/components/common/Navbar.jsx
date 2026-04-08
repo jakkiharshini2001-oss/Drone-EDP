@@ -40,7 +40,7 @@ const Navbar = ({ isLoggedIn, userData, onAuthClick, onLogout, onNavigate }) => 
       {/* Brand Section */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNavClick(isLoggedIn ? (userData?.user_role === 'provider' ? 'provider/home' : 'dashboard') : '')}>
-          <img src={logo} alt="Aerodronemitra " className="w-10 h-10 object-contain transition-all duration-300" />
+          <img src={logo} alt="Aerodronemitra " className="w-10 h-10 object-contain transition-all duration-300 " />
           <span className={`font-black tracking-tighter uppercase transition-all duration-300 text-xl text-green-600`}>
             Aerodronemitra
           </span>
