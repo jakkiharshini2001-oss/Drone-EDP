@@ -225,7 +225,7 @@ const DashboardHome = ({ userName, onViewServices }) => {
 
       <div className="relative z-10">
       {/* ── Hero Slider Card ── */}
-      <div className="mx-6 mt-4 rounded-[2rem] overflow-hidden relative h-[360px] group shadow-2xl bg-emerald-950">
+      <div className="w-full h-[calc(100vh-72px)] overflow-hidden relative group shadow-2xl bg-emerald-950">
 
         {/* Slide images — stacked, cross-fade via opacity */}
         {heroSlides.map((slide, i) => (
@@ -238,12 +238,9 @@ const DashboardHome = ({ userName, onViewServices }) => {
             <img
               src={slide.img}
               alt={slide.title || `slide-${i}`}
-              className="w-full h-full object-contain object-center"
+              className="w-full h-full object-fill"
             />
-            {/* Watermark cover: hides the top-right badge on img2 */}
-            {!slide.hasContent && (
-              <div className="absolute top-0 right-0 w-32 h-10 bg-emerald-950" />
-            )}
+
             {/* Dark gradient only on the content slide */}
             {slide.hasContent && (
               <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
