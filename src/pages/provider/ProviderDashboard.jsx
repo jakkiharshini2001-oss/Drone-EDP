@@ -47,6 +47,70 @@ export default function ProviderDashboard() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  const getDateKey = (dateValue) => {
+    if (!dateValue) return "";
+    const d = new Date(dateValue);
+    const year = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+    }).format(d);
+    const month = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      month: "2-digit",
+    }).format(d);
+    const day = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+    }).format(d);
+    return `${year}-${month}-${day}`;
+  };
+
+  const sanitizeUuid = (value) => {
+    if (value === null || value === undefined) return null;
+    const cleaned = String(value).replace(/[{}"]/g, "").trim();
+    return cleaned || null;
+  };
+
+  const normalizeUuidArray = (value) => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value.map(sanitizeUuid).filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+
+      // JSON array string
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed)
+            ? parsed.map(sanitizeUuid).filter(Boolean)
+            : [];
+        } catch {
+          return [];
+        }
+      }
+
+      // Postgres array literal: {"uuid1","uuid2"}
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const inner = trimmed.slice(1, -1).trim();
+        if (!inner) return [];
+        return inner
+          .split(",")
+          .map((item) => sanitizeUuid(item))
+          .filter(Boolean);
+      }
+
+      // Single UUID string
+      const single = sanitizeUuid(trimmed);
+      return single ? [single] : [];
+    }
+
+    return [];
+  };
+
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const hasAll =
       lat1 !== null &&
@@ -66,9 +130,9 @@ export default function ProviderDashboard() {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return (R * c).toFixed(1);
   };
@@ -132,11 +196,8 @@ export default function ProviderDashboard() {
         );
       }
 
-      const notified = Array.isArray(booking.notified_providers)
-        ? booking.notified_providers
-        : [];
-
-      const isAssignedToMe = booking.provider_id === user.id;
+      const notified = normalizeUuidArray(booking.notified_providers);
+      const isAssignedToMe = String(booking.provider_id || "") === String(user.id);
 
       const isDirectAssignedBooking =
         isAssignedToMe &&
@@ -153,7 +214,7 @@ export default function ProviderDashboard() {
         notified.map(String).includes(String(user.id));
 
       if (!isAssignedToMe && !isBroadcastForMe) continue;
-      if (booking.cancelled_provider_id === user.id) continue;
+      if (String(booking.cancelled_provider_id || "") === String(user.id)) continue;
 
       let cropName = "Unknown Crop";
 
@@ -199,6 +260,7 @@ export default function ProviderDashboard() {
 
       enrichedBookings.push({
         ...booking,
+        notified_providers: notified,
         crop_name: cropName,
         farmer_location: booking.address_line || farmerLocation,
         distance_km: distanceKm,
@@ -255,16 +317,12 @@ export default function ProviderDashboard() {
 
       const { data: providerBookings } = await supabase
         .from("bookings")
-        .select("scheduled_at")
+        .select("id, scheduled_at")
         .eq("provider_id", user.id)
-        .in("status", ["accepted", "ongoing"]);
+        .in("status", ["confirmed", "in_progress"]);
 
       if (providerBookings) {
-        setBusyDates(
-          providerBookings.map((b) =>
-            new Date(b.scheduled_at).toLocaleDateString("en-CA")
-          )
-        );
+        setBusyDates(providerBookings.map((b) => getDateKey(b.scheduled_at)));
       }
 
       const { data, error } = await supabase
@@ -336,10 +394,7 @@ export default function ProviderDashboard() {
 
         const { error } = await supabase
           .from("providers")
-          .update({
-            lat,
-            lng,
-          })
+          .update({ lat, lng })
           .eq("id", user.id);
 
         if (error) {
@@ -363,7 +418,7 @@ export default function ProviderDashboard() {
   const handleAccept = async (booking) => {
     if (acceptingId === booking.id) return;
 
-    const bookingDate = new Date(booking.scheduled_at).toISOString().split("T")[0];
+    const bookingDate = getDateKey(booking.scheduled_at);
     const isBusy = busyDates.includes(bookingDate);
 
     if (isBusy) {
@@ -371,6 +426,10 @@ export default function ProviderDashboard() {
       return;
     }
 
+    await performAccept(booking);
+  };
+
+  const performAccept = async (booking) => {
     try {
       setAcceptingId(booking.id);
 
@@ -380,7 +439,7 @@ export default function ProviderDashboard() {
         const { error } = await supabase
           .from("bookings")
           .update({
-            status: "accepted",
+            status: "confirmed",
             request_status: "assigned",
             accepted_at: acceptedAt,
           })
@@ -395,12 +454,12 @@ export default function ProviderDashboard() {
         }
 
         patchRequest(booking.id, {
-          status: "accepted",
+          status: "confirmed",
           request_status: "assigned",
           accepted_at: acceptedAt,
         });
 
-        const newBusyDate = new Date(booking.scheduled_at).toLocaleDateString("en-CA");
+        const newBusyDate = getDateKey(booking.scheduled_at);
         setBusyDates((prev) =>
           prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]
         );
@@ -413,7 +472,7 @@ export default function ProviderDashboard() {
       const { data, error } = await supabase
         .from("bookings")
         .update({
-          status: "accepted",
+          status: "confirmed",
           request_status: "assigned",
           accepted_at: acceptedAt,
           provider_id: providerId,
@@ -439,7 +498,7 @@ export default function ProviderDashboard() {
 
       patchRequest(booking.id, {
         ...booking,
-        status: "accepted",
+        status: "confirmed",
         request_status: "assigned",
         accepted_at: acceptedAt,
         provider_id: providerId,
@@ -447,7 +506,7 @@ export default function ProviderDashboard() {
         cancelled_provider_id: null,
       });
 
-      const newBusyDate = new Date(booking.scheduled_at).toLocaleDateString("en-CA");
+      const newBusyDate = getDateKey(booking.scheduled_at);
       setBusyDates((prev) =>
         prev.includes(newBusyDate) ? prev : [...prev, newBusyDate]
       );
@@ -465,14 +524,14 @@ export default function ProviderDashboard() {
 
   const directStartAdminJob = async (booking) => {
     patchRequest(booking.id, {
-      status: "ongoing",
+      status: "in_progress",
       start_otp: null,
     });
 
     const { data, error } = await supabase
       .from("bookings")
       .update({
-        status: "ongoing",
+        status: "in_progress",
         start_otp: null,
       })
       .eq("id", booking.id)
@@ -523,13 +582,6 @@ export default function ProviderDashboard() {
 
     const otp = generateOtp();
 
-    setOtpInput("");
-    setOtpError("");
-    setOtpLoading(false);
-    setOtpModal({ booking: { ...booking, start_otp: otp }, type: "start" });
-
-    patchRequest(booking.id, { start_otp: otp });
-
     const { error } = await supabase
       .from("bookings")
       .update({ start_otp: otp })
@@ -538,10 +590,15 @@ export default function ProviderDashboard() {
 
     if (error) {
       toast.error("Failed to generate OTP: " + error.message);
-      setOtpModal(null);
-      patchRequest(booking.id, { start_otp: null });
       return;
     }
+
+    patchRequest(booking.id, { start_otp: otp });
+
+    setOtpInput("");
+    setOtpError("");
+    setOtpLoading(false);
+    setOtpModal({ booking: { ...booking, start_otp: otp }, type: "start" });
   };
 
   const completeJob = async (booking) => {
@@ -552,13 +609,6 @@ export default function ProviderDashboard() {
 
     const otp = generateOtp();
 
-    setOtpInput("");
-    setOtpError("");
-    setOtpLoading(false);
-    setOtpModal({ booking: { ...booking, complete_otp: otp }, type: "complete" });
-
-    patchRequest(booking.id, { complete_otp: otp });
-
     const { error } = await supabase
       .from("bookings")
       .update({ complete_otp: otp })
@@ -567,10 +617,15 @@ export default function ProviderDashboard() {
 
     if (error) {
       toast.error("Failed to generate OTP: " + error.message);
-      setOtpModal(null);
-      patchRequest(booking.id, { complete_otp: null });
       return;
     }
+
+    patchRequest(booking.id, { complete_otp: otp });
+
+    setOtpInput("");
+    setOtpError("");
+    setOtpLoading(false);
+    setOtpModal({ booking: { ...booking, complete_otp: otp }, type: "complete" });
   };
 
   const handleVerifyOtp = async () => {
@@ -615,13 +670,16 @@ export default function ProviderDashboard() {
 
       if (otpModal.type === "start") {
         patchRequest(otpModal.booking.id, {
-          status: "ongoing",
+          status: "in_progress",
           start_otp: null,
         });
 
         const { data: updated, error } = await supabase
           .from("bookings")
-          .update({ status: "ongoing", start_otp: null })
+          .update({
+            status: "in_progress",
+            start_otp: null,
+          })
           .eq("id", otpModal.booking.id)
           .eq("provider_id", providerId)
           .select();
@@ -641,7 +699,10 @@ export default function ProviderDashboard() {
 
         const { data: updated, error } = await supabase
           .from("bookings")
-          .update({ status: "completed", complete_otp: null })
+          .update({
+            status: "completed",
+            complete_otp: null,
+          })
           .eq("id", otpModal.booking.id)
           .eq("provider_id", providerId)
           .select();
@@ -718,31 +779,52 @@ export default function ProviderDashboard() {
 
       if (!user) {
         toast.error("User not found");
+        setCancelLoading(false);
         return;
       }
 
-      const previousNotified = Array.isArray(cancelModal.notified_providers)
-        ? cancelModal.notified_providers
-        : [];
+      let previousNotified = [];
 
-      const restartedNotified = previousNotified.filter(
-        (id) => String(id) !== String(user.id)
-      );
+      if (Array.isArray(cancelModal.notified_providers)) {
+        previousNotified = cancelModal.notified_providers;
+      } else if (typeof cancelModal.notified_providers === "string") {
+        const raw = cancelModal.notified_providers.trim();
 
-      removeRequest(cancelModal.id);
+        if (raw.startsWith("{") && raw.endsWith("}")) {
+          previousNotified = raw
+            .slice(1, -1)
+            .split(",")
+            .map((v) => v.replace(/"/g, "").trim())
+            .filter(Boolean);
+        } else if (raw.startsWith("[") && raw.endsWith("]")) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              previousNotified = parsed;
+            }
+          } catch {
+            previousNotified = [];
+          }
+        }
+      }
+
+      const restartedNotified = previousNotified
+        .map((id) => String(id).replace(/"/g, "").trim())
+        .filter(Boolean)
+        .filter((id) => id !== String(user.id));
 
       const payload = {
         status: "reassigning",
         provider_id: null,
         provider_name: null,
         decline_reason: trimmedReason,
-        cancelled_provider_id: user.id,
+        cancelled_provider_id: [user.id], // ✅ FIX
         reassignment_started_at: new Date().toISOString(),
         request_status: "broadcasting",
         accepted_at: null,
         start_otp: null,
         complete_otp: null,
-        notified_providers: restartedNotified,
+        notified_providers: restartedNotified, // ✅ stays array
       };
 
       const { data, error } = await supabase
@@ -750,19 +832,25 @@ export default function ProviderDashboard() {
         .update(payload)
         .eq("id", cancelModal.id)
         .eq("provider_id", user.id)
+        .eq("status", "confirmed")
         .select();
 
       if (error) {
+        console.error("Cancellation error:", error);
         toast.error(error.message || "Cancellation failed");
+        setCancelLoading(false);
         loadDashboard();
         return;
       }
 
       if (!data || data.length === 0) {
-        toast.error("Cancellation failed");
+        toast.error("Cancellation failed - booking not found or already updated");
+        setCancelLoading(false);
         loadDashboard();
         return;
       }
+
+      removeRequest(cancelModal.id);
 
       setBusyDates((prev) => {
         const cancelledDate = new Date(cancelModal.scheduled_at).toLocaleDateString(
@@ -800,14 +888,20 @@ export default function ProviderDashboard() {
     requested: requests.filter(
       (r) => r.status === "requested" || r.status === "reassigning"
     ).length,
-    accepted: requests.filter((r) => r.status === "accepted").length,
-    ongoing: requests.filter((r) => r.status === "ongoing").length,
+    accepted: requests.filter((r) => r.status === "confirmed").length,
+    ongoing: requests.filter((r) => r.status === "in_progress").length,
     completed: requests.filter((r) => r.status === "completed").length,
   };
 
   const filteredRequests = requests.filter((r) => {
     if (activeFilter === "requested") {
       return r.status === "requested" || r.status === "reassigning";
+    }
+    if (activeFilter === "accepted") {
+      return r.status === "confirmed";
+    }
+    if (activeFilter === "ongoing") {
+      return r.status === "in_progress";
     }
     return r.status === activeFilter;
   });
@@ -970,32 +1064,28 @@ export default function ProviderDashboard() {
                     <button
                       key={item.key}
                       onClick={() => setActiveFilter(item.key)}
-                      className={`rounded-[24px] border p-4 text-left transition-all shadow-sm ${
-                        active
-                          ? "bg-gradient-to-br from-green-700 to-emerald-700 text-white border-green-700 shadow-lg scale-[1.01]"
-                          : "bg-white border-green-100 hover:border-green-300 text-slate-800"
-                      }`}
+                      className={`rounded-[24px] border p-4 text-left transition-all shadow-sm ${active
+                        ? "bg-gradient-to-br from-green-700 to-emerald-700 text-white border-green-700 shadow-lg scale-[1.01]"
+                        : "bg-white border-green-100 hover:border-green-300 text-slate-800"
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                            active ? "bg-white/15" : "bg-green-50"
-                          }`}
+                          className={`w-11 h-11 rounded-2xl flex items-center justify-center ${active ? "bg-white/15" : "bg-green-50"
+                            }`}
                         >
                           <Icon size={20} />
                         </div>
                         <span
-                          className={`text-2xl font-extrabold ${
-                            active ? "text-white" : "text-green-800"
-                          }`}
+                          className={`text-2xl font-extrabold ${active ? "text-white" : "text-green-800"
+                            }`}
                         >
                           {item.count}
                         </span>
                       </div>
                       <p
-                        className={`text-sm font-bold ${
-                          active ? "text-white" : "text-slate-700"
-                        }`}
+                        className={`text-sm font-bold ${active ? "text-white" : "text-slate-700"
+                          }`}
                       >
                         {item.label}
                       </p>
@@ -1175,51 +1265,35 @@ export default function ProviderDashboard() {
                             Navigate
                           </button>
 
-                          {(r.status === "requested" || r.status === "reassigning") &&
-                            (() => {
-                              const bookingDate = new Date(r.scheduled_at)
-                                .toISOString()
-                                .split("T")[0];
-                              const isBusy = busyDates.includes(bookingDate);
-
-                              return (
-                                <button
-                                  disabled={acceptingId === r.id}
-                                  onClick={() => {
-                                    if (isBusy) {
-                                      setBusyConflict(r);
-                                      return;
-                                    }
-                                    handleAccept(r);
-                                  }}
-                                  className={`w-full py-3 rounded-2xl text-white font-bold disabled:opacity-60 transition ${
-                                    r.is_admin_booking
-                                      ? "bg-indigo-600 hover:bg-indigo-700"
-                                      : "bg-green-600 hover:bg-green-700"
-                                  }`}
-                                >
-                                  {acceptingId === r.id
-                                    ? "Accepting..."
-                                    : r.is_direct_assigned_booking
-                                    ? "Accept Assigned Job"
-                                    : r.status === "reassigning"
+                          {(r.status === "requested" || r.status === "reassigning") && (
+                            <button
+                              disabled={acceptingId === r.id}
+                              onClick={() => handleAccept(r)}
+                              className={`w-full py-3 rounded-2xl text-white font-bold disabled:opacity-60 transition ${r.is_admin_booking
+                                ? "bg-indigo-600 hover:bg-indigo-700"
+                                : "bg-green-600 hover:bg-green-700"
+                                }`}
+                            >
+                              {acceptingId === r.id
+                                ? "Accepting..."
+                                : r.is_direct_assigned_booking
+                                  ? "Accept Assigned Job"
+                                  : r.status === "reassigning"
                                     ? "Accept Reassigned Job"
                                     : r.is_admin_booking
-                                    ? "Accept Agency Job"
-                                    : "Accept Booking"}
-                                </button>
-                              );
-                            })()}
+                                      ? "Accept Agency Job"
+                                      : "Accept Booking"}
+                            </button>
+                          )}
 
-                          {r.status === "accepted" && (
+                          {r.status === "confirmed" && (
                             <>
                               <button
                                 onClick={() => handleStartJob(r)}
-                                className={`w-full py-3 rounded-2xl text-white font-bold transition ${
-                                  r.is_admin_booking
-                                    ? "bg-indigo-600 hover:bg-indigo-700"
-                                    : "bg-amber-500 hover:bg-amber-600"
-                                }`}
+                                className={`w-full py-3 rounded-2xl text-white font-bold transition ${r.is_admin_booking
+                                  ? "bg-indigo-600 hover:bg-indigo-700"
+                                  : "bg-amber-500 hover:bg-amber-600"
+                                  }`}
                               >
                                 {r.is_admin_booking ? "Start Job" : "Start Job (OTP)"}
                               </button>
@@ -1233,14 +1307,13 @@ export default function ProviderDashboard() {
                             </>
                           )}
 
-                          {r.status === "ongoing" && (
+                          {r.status === "in_progress" && (
                             <button
                               onClick={() => completeJob(r)}
-                              className={`w-full py-3 rounded-2xl text-white font-bold transition ${
-                                r.is_admin_booking
-                                  ? "bg-indigo-700 hover:bg-indigo-800"
-                                  : "bg-emerald-700 hover:bg-emerald-800"
-                              }`}
+                              className={`w-full py-3 rounded-2xl text-white font-bold transition ${r.is_admin_booking
+                                ? "bg-indigo-700 hover:bg-indigo-800"
+                                : "bg-emerald-700 hover:bg-emerald-800"
+                                }`}
                             >
                               {r.is_admin_booking ? "Complete Job" : "Complete Job (OTP)"}
                             </button>
@@ -1294,11 +1367,10 @@ export default function ProviderDashboard() {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
-                          className={`text-xl ${
-                            star <= Math.round(parseFloat(avgRating))
-                              ? "text-yellow-500"
-                              : "text-slate-200"
-                          }`}
+                          className={`text-xl ${star <= Math.round(parseFloat(avgRating))
+                            ? "text-yellow-500"
+                            : "text-slate-200"
+                            }`}
                         >
                           ★
                         </span>
@@ -1339,8 +1411,8 @@ export default function ProviderDashboard() {
                     onChange={setCalendarDate}
                     tileClassName={({ date, view }) => {
                       if (view === "month") {
-                        const formatted = date.toLocaleDateString("en-CA");
-                        const today = new Date().toLocaleDateString("en-CA");
+                        const formatted = getDateKey(date);
+                        const today = getDateKey(new Date());
 
                         if (busyDates.includes(formatted)) return "calendar-booked";
                         if (formatted === today) return "calendar-today";
@@ -1349,7 +1421,7 @@ export default function ProviderDashboard() {
                     }}
                     tileContent={({ date, view }) => {
                       if (view === "month") {
-                        const formatted = date.toLocaleDateString("en-CA");
+                        const formatted = getDateKey(date);
                         if (busyDates.includes(formatted)) {
                           return <span className="calendar-dot" />;
                         }
@@ -1400,8 +1472,8 @@ export default function ProviderDashboard() {
                   {selectedRequest.is_admin_booking
                     ? "Admin Agency Booking Details"
                     : selectedRequest.beneficiary_name
-                    ? "Beneficiary Details"
-                    : "Farmer Details"}
+                      ? "Beneficiary Details"
+                      : "Farmer Details"}
                 </h2>
               </div>
 
@@ -1460,7 +1532,7 @@ export default function ProviderDashboard() {
                     <p><b>Date & Time:</b> {formatDateTime(selectedRequest.scheduled_at)}</p>
 
                     {selectedRequest.status !== "requested" &&
-                    selectedRequest.status !== "reassigning" ? (
+                      selectedRequest.status !== "reassigning" ? (
                       <div className="mt-3 p-4 bg-green-50 border border-green-100 rounded-2xl space-y-2">
                         <p className="text-xs text-green-700 font-bold uppercase tracking-wide">
                           Contact Details
@@ -1569,7 +1641,7 @@ export default function ProviderDashboard() {
                   onClick={() => {
                     const selected = busyConflict;
                     setBusyConflict(null);
-                    handleAccept(selected);
+                    performAccept(selected);
                   }}
                   className="flex-1 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm"
                 >
@@ -1584,9 +1656,8 @@ export default function ProviderDashboard() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden border border-green-100">
               <div
-                className={`px-6 py-5 flex items-center gap-3 ${
-                  otpModal.type === "start" ? "bg-amber-500" : "bg-green-700"
-                }`}
+                className={`px-6 py-5 flex items-center gap-3 ${otpModal.type === "start" ? "bg-amber-500" : "bg-green-700"
+                  }`}
               >
                 <span className="text-3xl">
                   {otpModal.type === "start" ? "🔐" : "✅"}
@@ -1650,11 +1721,10 @@ export default function ProviderDashboard() {
                 <button
                   onClick={handleVerifyOtp}
                   disabled={otpLoading || otpInput.length !== 4}
-                  className={`flex-1 py-3 rounded-2xl text-white font-bold text-sm disabled:opacity-50 ${
-                    otpModal.type === "start"
-                      ? "bg-amber-500 hover:bg-amber-600"
-                      : "bg-green-700 hover:bg-green-800"
-                  }`}
+                  className={`flex-1 py-3 rounded-2xl text-white font-bold text-sm disabled:opacity-50 ${otpModal.type === "start"
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : "bg-green-700 hover:bg-green-800"
+                    }`}
                 >
                   {otpLoading ? "Verifying..." : "Verify & Confirm"}
                 </button>

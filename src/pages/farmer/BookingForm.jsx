@@ -2,6 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 /* ================================================================
    SAVED ADDRESSES MODAL
 ================================================================ */
@@ -1159,6 +1169,78 @@ const BookingForm = ({ bookingData, onBack }) => {
 
     setConfirmingBooking(true);
 
+    if (paymentMethod === "ONLINE") {
+      const res = await loadRazorpayScript();
+
+      if (!res) {
+        alert("Razorpay SDK failed to load. Are you connected to the internet?");
+        setConfirmingBooking(false);
+        return;
+      }
+
+      const selectedCrop = cropTypes.find(
+        (c) => String(c.id) === String(details.cropType)
+      );
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: Math.round(totalPrice * 100).toString(),
+        currency: "INR",
+        name: "AeroDroneMitra",
+        description: `Booking for ${selectedCrop?.crop_name || "Service"}`,
+        handler: async function () {
+          await insertBookingToDB({ paymentStatus: "PAID" });
+        },
+        modal: {
+          ondismiss: function () {
+            setConfirmingBooking(false);
+          }
+        },
+        prefill: {
+          name: farmerProfile?.full_name || beneficiaryName || "Farmer",
+          contact: farmerPhone || beneficiaryPhone || "",
+          email: "farmer@aerodronemitra.com",
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay using UPI",
+                instruments: [
+                  {
+                    method: "upi"
+                  }
+                ]
+              },
+              other: {
+                name: "Other Methods",
+                instruments: [
+                  { method: "card" },
+                  { method: "netbanking" },
+                  { method: "wallet" }
+                ]
+              }
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
+        },
+        theme: {
+          color: "#10b981",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
+    } else {
+      await insertBookingToDB({ paymentStatus: "PENDING" });
+    }
+  };
+
+  const insertBookingToDB = async ({ paymentStatus }) => {
     try {
       const {
         data: { user },
@@ -1208,7 +1290,7 @@ const BookingForm = ({ bookingData, onBack }) => {
             address_line: selectedLocation.address_name,
             landmark: details.landmark,
 
-            phone_number: farmerPhone,
+            contact_phone: farmerPhone,
 
             beneficiary_name: bookForOthers ? beneficiaryName.trim() : null,
             beneficiary_phone: bookForOthers ? beneficiaryPhone.trim() : null,
@@ -1223,8 +1305,8 @@ const BookingForm = ({ bookingData, onBack }) => {
             dispatch_started_at: dispatchStarted,
             notified_providers: [],
 
-            payment_status: "PENDING",
-            payment_method: paymentMethod,
+            payment_status: paymentStatus,
+            payment_method: paymentMethod === "ONLINE" ? "ONLINE" : "CASH_ON_SERVICE",
             booking_source: "farmer_web",
           },
         ])
@@ -1557,7 +1639,7 @@ const BookingForm = ({ bookingData, onBack }) => {
                         <span className="bg-emerald-600 text-white px-4 py-2 rounded-full border border-emerald-600 shadow-sm font-black text-xs uppercase tracking-widest">
                           {paymentMethod === "CASH_ON_SERVICE"
                             ? "💵 Cash on Service"
-                            : paymentMethod}
+                            : "💳 Pay Online"}
                         </span>
                       </div>
                     </div>
@@ -1788,8 +1870,8 @@ const BookingForm = ({ bookingData, onBack }) => {
                               setDetails({ ...details, selectedTime: slot })
                             }
                             className={`p-3 rounded-lg text-center cursor-pointer text-sm transition-colors ${isSelected
-                                ? "bg-green-600 text-white"
-                                : "bg-gray-100 hover:bg-green-100 text-black"
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-100 hover:bg-green-100 text-black"
                               }`}
                           >
                             {slot}
@@ -1805,14 +1887,14 @@ const BookingForm = ({ bookingData, onBack }) => {
                     <div
                       onClick={() => setPaymentMethod("CASH_ON_SERVICE")}
                       className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "CASH_ON_SERVICE"
-                          ? "border-emerald-300 bg-white"
-                          : "border-white/10 bg-white/5 hover:border-white/40"
+                        ? "border-emerald-300 bg-white"
+                        : "border-white/10 bg-white/5 hover:border-white/40"
                         }`}
                     >
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === "CASH_ON_SERVICE"
-                            ? "border-green-500"
-                            : "border-gray-300"
+                          ? "border-green-500"
+                          : "border-gray-300"
                           }`}
                       >
                         {paymentMethod === "CASH_ON_SERVICE" && (
@@ -1823,16 +1905,16 @@ const BookingForm = ({ bookingData, onBack }) => {
                       <div className="flex-1">
                         <p
                           className={`font-bold text-sm ${paymentMethod === "CASH_ON_SERVICE"
-                              ? "text-emerald-900"
-                              : "text-white"
+                            ? "text-emerald-900"
+                            : "text-white"
                             }`}
                         >
                           💵 Cash on Service
                         </p>
                         <p
                           className={`text-xs mt-0.5 ${paymentMethod === "CASH_ON_SERVICE"
-                              ? "text-emerald-800"
-                              : "text-emerald-100/70"
+                            ? "text-emerald-800"
+                            : "text-emerald-100/70"
                             }`}
                         >
                           Pay the operator directly after the service is completed
@@ -1846,17 +1928,48 @@ const BookingForm = ({ bookingData, onBack }) => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 p-4 rounded-2xl border-2 border-white/5 bg-white opacity-50 cursor-not-allowed">
-                      <div className="w-5 h-5 rounded-full border-2 border-black shrink-0" />
-                      <div className="flex-1">
-                        <p className="font-bold text-sm text-black">
-                          🏦 Online Payment
-                        </p>
-                        <p className="text-xs text-black mt-0.5">Coming soon</p>
+                    <div
+                      onClick={() => setPaymentMethod("ONLINE")}
+                      className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "ONLINE"
+                        ? "border-emerald-300 bg-white"
+                        : "border-white/10 bg-white/5 hover:border-white/40"
+                        }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === "ONLINE"
+                          ? "border-green-500"
+                          : "border-gray-300"
+                          }`}
+                      >
+                        {paymentMethod === "ONLINE" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                        )}
                       </div>
-                      <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full font-semibold shrink-0">
-                        Soon
-                      </span>
+
+                      <div className="flex-1">
+                        <p
+                          className={`font-bold text-sm ${paymentMethod === "ONLINE"
+                            ? "text-emerald-900"
+                            : "text-white"
+                            }`}
+                        >
+                          💳 Pay Online
+                        </p>
+                        <p
+                          className={`text-xs mt-0.5 ${paymentMethod === "ONLINE"
+                            ? "text-emerald-800"
+                            : "text-emerald-100/70"
+                            }`}
+                        >
+                          Pay securely via UPI, Cards, or Netbanking
+                        </p>
+                      </div>
+
+                      {paymentMethod === "ONLINE" && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold shrink-0">
+                          Selected
+                        </span>
+                      )}
                     </div>
                   </div>
 
